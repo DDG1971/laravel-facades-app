@@ -1,0 +1,10 @@
+name,label
+matte,Матовый
+glossy,Глянцевый
+Supermat,Супермат
+Supermat+varnish,Супермат+лак
+Patina,Патина
+PatinaGold,ПатинаЗолото
+PatinaSilver,ПатинаСеребро
+PatinaGold+Glossy,ПатинаЗолото+Глянец
+PatinaSilver+Glossy,ПатинаСеребро+Глянец
