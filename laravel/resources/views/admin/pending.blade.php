@@ -6,6 +6,10 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
             {{ __('Pending Users') }}
         </h2>
+        <x-primary-button onclick="window.location='{{ url('/admin/dashboard') }}'">
+            {{ __('Back to Dashboard') }}
+        </x-primary-button>
+
     </x-slot>
 
     @if (session('status'))

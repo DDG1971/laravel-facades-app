@@ -44,4 +44,24 @@ class AdminController extends Controller
         // для обычного пользователя
         //return view('dashboard');
     }
+    public function clients()
+    {
+        $clients = \App\Models\Customer::all();
+        return view('admin.clients.index', compact('clients'));
+    }
+
+    public function editClient($id): \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+    {
+        $client = \App\Models\Customer::findOrFail($id);
+        return view('admin.clients.edit', compact('client'));
+    }
+
+    public function updateClient(Request $request, $id): \Illuminate\Http\RedirectResponse
+    {
+        $client = \App\Models\Customer::findOrFail($id);
+        $client->update($request->all());
+
+        return redirect()->route('admin.clients')->with('status', 'Client updated successfully!');
+    }
+
 }

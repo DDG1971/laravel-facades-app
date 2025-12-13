@@ -32,6 +32,12 @@
                 <a href="{{ url('/profile/edit') }}" class="text-blue-600">Перейти</a>
             </div>
 
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🏢 Clients</h2>
+                <p>Редактирование данных клиентов.</p>
+                <a href="{{ url('/admin/clients') }}" class="text-blue-600">Перейти</a>
+            </div>
+
             <!-- 🔹 Новый блок статистики -->
             <div class="p-6 bg-white shadow rounded">
                 <h2 class="font-semibold">📊 Statistics</h2>

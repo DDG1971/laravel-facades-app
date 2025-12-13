@@ -34,7 +34,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/pending-users', [AdminController::class, 'pending'])->name('admin.pending');
     Route::post('/admin/approve/{user}', [AdminController::class, 'approve'])->name('admin.approve');
+
+    // 🔹 управление клиентами
+    Route::get('/admin/clients', [AdminController::class, 'clients'])->name('admin.clients');
+    Route::get('/admin/clients/{id}/edit', [AdminController::class, 'editClient'])->name('admin.clients.edit');
+    Route::put('/admin/clients/{id}', [AdminController::class, 'updateClient'])->name('admin.clients.update');
+
 });
+
 
 Route::get('/test', function () {
     return view('test');
