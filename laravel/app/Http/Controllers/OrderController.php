@@ -2,12 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Milling;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Customer;
 use App\Models\Status;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\FacadeType;
+use App\Models\ColorCode;
+use App\Models\ColorCatalog;
+use App\Models\CoatingType;
+use App\Models\Drilling;
+
 
 class OrderController extends Controller
 {
@@ -25,9 +32,25 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $customers   = Customer::all();
-        $statuses    = Status::all();
-        return view('orders.create', compact('customers','statuses'));
+        $customers     = Customer::all();
+        $statuses      = Status::all();
+        $facadeTypes   = FacadeType::all();
+        $colors        = ColorCode::all();
+        $colorCatalogs = ColorCatalog::all();
+        $coatingTypes  = CoatingType::all();
+        $drillings     = Drilling::all();
+        $millings      = Milling::all();   // твоя модель сверловки
+
+        return view('orders.create', compact(
+            'customers',
+            'statuses',
+            'facadeTypes',
+            'colors',
+            'colorCatalogs',
+            'coatingTypes',
+            'drillings',
+            'millings'
+        ));
     }
 
     /**

@@ -2,18 +2,18 @@
     <x-slot name="head">
         <x-assets />
     </x-slot>
-    <!-- 🔹 Вот здесь добавляем header -->
+    <!--  header -->
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
             {{ __('Admin Panel') }}
         </h2>
     </x-slot>
-    <!-- 🔹 конец header -->
+    <!--  конец header -->
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-bold mb-6">Admin Panel</h1>
+       {{-- <h1 class="text-2xl font-bold mb-6">Admin Panel</h1> --}}
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div class="p-6 bg-white shadow rounded">
                 <h2 class="font-semibold">👥 Pending Users</h2>
                 <p>Управление пользователями со статусом pending.</p>

@@ -13,6 +13,6 @@ class ColorCatalog extends Model
 
     public function colorCodes()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(ColorCode::class);
     }
 }
