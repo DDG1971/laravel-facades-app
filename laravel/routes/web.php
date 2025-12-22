@@ -27,6 +27,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('orders', OrderController::class);
     Route::post('/orders/{order}/submit', [OrderController::class, 'submit'])->name('orders.submit');
     Route::delete('/order-items/{item}', [OrderController::class, 'destroyItem'])->name('order-items.destroy');
+    Route::get('/orders/{order}/preview', [OrderController::class, 'preview'])->name('orders.preview');
+
 });
 
 // Админка

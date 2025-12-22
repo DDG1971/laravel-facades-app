@@ -23,7 +23,8 @@
             <div class="p-6 bg-white shadow rounded">
                 <h2 class="font-semibold">📦 Orders</h2>
                 <p>Создание и управление заказами.</p>
-                <a href="{{ url('/orders/create') }}" class="text-blue-600">Перейти</a>
+                <a href="{{ route('orders.create') }}" class="text-blue-600">➕ Новый заказ</a>
+                <a href="{{ route('orders.index') }}" class="text-blue-600">📋 Список заказов</a>
             </div>
 
             <div class="p-6 bg-white shadow rounded">

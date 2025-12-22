@@ -10,7 +10,9 @@ class Order extends Model
         'customer_id',
         'user_id',
         'status_id',
-        'order_number',
+        'queue_number',          // внутренний счётчик
+        'client_order_number',   // номер клиента
+        'material',
         'total_price',
         'square_meters',
         'coating_type_id',

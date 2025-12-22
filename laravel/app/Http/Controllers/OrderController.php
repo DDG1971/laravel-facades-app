@@ -58,15 +58,30 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // создаём шапку заказа
+        // общий счётчик (очередь)
+        $lastQueue = Order::max('queue_number') ?? 0;
+
+        // создаём заказ
         $order = Order::create([
-            'customer_id' => $request->customer_id,
-            'status_id'   => Status::where('name', 'new')->first()->id,
-            'manager_id'  => Auth::id(),
-            'date_created'=> now(),
+            'customer_id'        => $request->customer_id,          // клиент, для которого создаётся заказ
+            'user_id'            => Auth::id(),                     // кто реально создал заказ (client/admin/manager)
+            'status_id'          => Status::where('name', 'new')->first()->id,
+            'date_received'      => now(),
+            'queue_number'       => $lastQueue + 1,                 // внутренняя очередь
+            'client_order_number'=> $request->client_order_number,  // № заказа клиента
+            'material'           => $request->material,             // общий материал заказа
+
+
         ]);
 
-        // добавляем позиции
+        // вложение для заказа
+        if ($request->hasFile('order_attachment')) {
+            $path = $request->file('order_attachment')->store('orders/attachments', 'public');
+            $order->attachment_path = $path;
+            $order->save();
+        }
+
+        // добавляем позиции (без material!)
         foreach ($request->items as $item) {
             OrderItem::create([
                 'order_id'            => $order->id,
@@ -75,7 +90,6 @@ class OrderController extends Controller
                 'coating_type_id'     => $item['coating_type_id'] ?? null,
                 'color_catalog_id'    => $item['color_catalog_id'] ?? null,
                 'color_code_id'       => $item['color_code_id'] ?? null,
-                'material'            => $item['material'],
                 'thickness'           => $item['thickness'],
                 'height'              => $item['height'],
                 'width'               => $item['width'],
@@ -89,11 +103,31 @@ class OrderController extends Controller
                 'status_id'           => $item['status_id'] ?? Status::where('name','new')->first()->id,
                 'date_status'         => now(),
                 'date_created'        => now(),
+                'attachment_path'     => isset($item['attachment_path'])
+                    ? $item['attachment_path']->store('order_items/attachments', 'public')
+                    : null,
             ]);
         }
+        // пересчёт итогов заказа
+        $totalSquare = 0;
+        $totalPrice  = 0;
+
+        foreach ($order->items as $item) {
+            // если square_meters не передан — считаем сами
+            $square = $item->square_meters ?? (($item->height * $item->width / 1_000_000) * $item->quantity);
+            $totalSquare += $square;
+
+            $totalPrice  += $item->total_price ?? 0;
+        }
+
+        $order->update([
+            'square_meters' => $totalSquare,
+            'total_price'   => $totalPrice,
+        ]);
 
         return redirect()->route('orders.show', $order);
     }
+
 
     /**
      * Просмотр заказа.
@@ -155,4 +189,13 @@ class OrderController extends Controller
         ]);
         return redirect()->route('orders.show', $order);
     }
+    public function preview(Order $order)
+    {
+        $items = $order->items;
+        $totalQuantity = $items->sum('quantity');
+        $totalSquare = $items->sum('square_meters');
+
+        return view('orders.preview', compact('order', 'items', 'totalQuantity', 'totalSquare'));
+    }
+
 }

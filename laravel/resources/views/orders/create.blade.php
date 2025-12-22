@@ -1,243 +1,275 @@
 <x-app-layout>
     <x-slot name="head">
-        <x-assets />
+        <x-assets/>
     </x-slot>
 
     <x-slot name="header">
-        <h2 class="font-semibold text-xl">Новый заказ</h2>
-        <h2 class="font-semibold text-xl text-red-500">Новый заказ</h2>
-
+        <h2 class="font-semibold text-lg">Создание заказа</h2>
     </x-slot>
 
-    <div class="max-w-7xl mx-auto px-4 py-6">
-        <form action="{{ route('orders.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
+    <!-- 🔹 Форма -->
+    <form method="POST" action="{{ route('orders.store') }}" enctype="multipart/form-data">
+        @csrf
 
-            <!-- 🔹 Первый ряд: № заказа, дата, клиент, статус -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                    <label for="order_number" class="block text-sm font-medium text-gray-700">№ заказа</label>
-                    <input type="text" name="order_number" id="order_number"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="date_received" class="block text-sm font-medium text-gray-700">Дата получения</label>
-                    <input type="date" name="date_received" id="date_received" value="{{ now()->toDateString() }}"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="customer_id" class="block text-sm font-medium text-gray-700">Клиент</label>
-                    <select name="customer_id" id="customer_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        @foreach($customers as $customer)
-                            <option value="{{ $customer->id }}">{{ $customer->company_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="status_id" class="block text-sm font-medium text-gray-700">Статус заказа</label>
-                    <select name="status_id" id="status_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        @foreach($statuses as $status)
-                            <option value="{{ $status->id }}">{{ $status->label }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        <!-- 🔹 Шапка заказа -->
+    <div class="mx-auto px-4 mt-6">
+        <div class="grid grid-cols-4 divide-x divide-y border border-gray-400 w-fit text-sm">
+            <!-- Первая строка -->
+            <div class="p-2">
+                <label for="date_received" class="block text-xs font-medium text-gray-700">Дата получения</label>
+                <input type="date" id="date_received" name="date_received"
+                       class="w-48 border rounded-md px-2 py-1 text-sm">
+            </div>
+            <div class="p-2">
+                <label for="customer_id" class="block text-xs font-medium text-gray-700">Клиент</label>
+                <select id="customer_id" name="customer_id"
+                        class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
+                    @foreach($customers as $customer)
+                        <option value="{{ $customer->id }}">{{ $customer->company_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            {{--<div class="p-2 no-print">
+                <label for="status_id" class="block text-xs font-medium text-gray-700">Статус заказа</label>
+                <select id="status_id" name="status_id"
+                        class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
+                    @foreach($statuses as $status)
+                        <option value="{{ $status->id }}">{{ $status->label }}</option>
+                    @endforeach
+                </select>
+            </div>--}}
+            <div class="p-2">
+                <label for="client_order_number" class="block text-xs font-medium text-gray-700">№ заказа клиента</label>
+                <input type="text" id="client_order_number" name="client_order_number"
+                       class="w-64 border rounded-md px-2 py-1 text-sm">
             </div>
 
-            <!-- 🔹 Второй ряд: Материал, Каталог цветов, Код цвета, Тип покрытия -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                    <label for="material" class="block text-sm font-medium text-gray-700">Материал</label>
-                    <input type="text" name="material" id="material" value="MDF"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="color_catalog_id" class="block text-sm font-medium text-gray-700">Каталог цветов</label>
-                    <select name="color_catalog_id" id="color_catalog_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        @foreach($colorCatalogs as $catalog)
-                            <option value="{{ $catalog->id }}" {{ $catalog->name_en == 'RAL' ? 'selected' : '' }}>
-                                {{ $catalog->name_en }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="color_code_id" class="block text-sm font-medium text-gray-700">Код цвета</label>
-                    <select name="color_code_id" id="color_code_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        @foreach($colors as $color)
-                            <option value="{{ $color->id }}" {{ $color->code == '9003' ? 'selected' : '' }}>
-                                {{ $color->code }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="coating_type_id" class="block text-sm font-medium text-gray-700">Тип покрытия</label>
-                    <select name="coating_type_id" id="coating_type_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        @foreach($coatingTypes as $coating)
-                            <option value="{{ $coating->id }}" {{ $coating->label == 'Матовый' ? 'selected' : '' }}>
-                                {{ $coating->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+            <!-- Вторая строка -->
+            <div class="p-2"></div>
+            <div class="p-2">
+                <label for="color_catalog_id" class="block text-xs font-medium text-gray-700">Каталог цветов</label>
+                <select id="color_catalog_id" name="color_catalog_id"
+                        class="w-48 border rounded-md px-2 py-1 bg-white text-sm">
+                    @foreach($colorCatalogs as $catalog)
+                        <option value="{{ $catalog->id }}">{{ $catalog->name_en }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="p-2">
+                <label for="color_code_id" class="block text-xs font-medium text-gray-700">Код цвета</label>
+                <select id="color_code_id" name="color_code_id"
+                        class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
+                    @foreach($colors as $color)
+                        <option value="{{ $color->id }}">{{ $color->code }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="p-2">
+                <label for="coating_type_id" class="block text-xs font-medium text-gray-700">Тип покрытия</label>
+                <select id="coating_type_id" name="coating_type_id"
+                        class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
+                    @foreach($coatingTypes as $coating)
+                        <option value="{{ $coating->id }}">{{ $coating->label }}</option>
+                    @endforeach
+                </select>
             </div>
 
-            <!-- 🔹 Третий ряд: Фрезеровка и Файл вложения -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label for="milling_id" class="block text-sm font-medium text-gray-700">Фрезеровка</label>
-                    <select name="milling_id" id="milling_id"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring focus:ring-indigo-500">
-                        <option value="">—</option>
-                        @foreach($millings as $milling)
-                            <option value="{{ $milling->id }}">{{ $milling->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="attachment_path" class="block text-sm font-medium text-gray-700">Файл вложения</label>
-                    <input type="file" name="attachment_path" id="attachment_path"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-indigo-500">
-                </div>
+            <!-- Третья строка -->
+            <div class="p-2"></div>
+            <div class="p-2 no-print">
+                <label for="order_attachment" class="block text-xs font-medium text-gray-700">Файл вложения</label>
+                <input type="file" name="order_attachment" id="order_attachment" class="hidden"
+                       onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'Файл не выбран';" />
+                <button type="button"
+                        onclick="document.getElementById('order_attachment').click()"
+                        class="px-2 py-1 border rounded-md bg-gray-100 hover:bg-gray-200 text-sm">
+                    Выберите файл
+                </button>
+                <span id="file-name" class="ml-2 text-xs text-gray-500">Файл не выбран</span>
             </div>
-        </form>
+            <div class="p-2">
+                <label for="material" class="block text-xs font-medium text-gray-700">Материал</label>
+                <select id="material" name="material"
+                        class="w-48 border rounded-md px-2 py-1 bg-white text-sm">
+                    <option value="MDF">MDF</option>
+                    <option value="Shpon">Шпон</option>
+                </select>
+            </div>
+            <div class="p-2">
+                <label for="milling_id" class="block text-xs font-medium text-gray-700">Фрезеровка</label>
+                <select id="milling_id" name="milling_id"
+                        class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
+                    <option value="">—</option>
+                    @foreach($millings as $milling)
+                        <option value="{{ $milling->id }}">{{ $milling->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
     </div>
-            <!-- 🔹 Позиции заказа -->
-            <h4 class="text-lg font-semibold mb-2">Позиции заказа</h4>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full border border-gray-300 rounded-lg" id="order-items-table">
-                    <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2 border text-left">Тип фасада</th>
-                        <th class="px-3 py-2 border text-left">Высота</th>
-                        <th class="px-3 py-2 border text-left">Ширина</th>
-                        <th class="px-3 py-2 border text-left">Количество</th>
-                        <th class="px-3 py-2 border text-left">Двухстор.покрытие</th>
-                        <th class="px-3 py-2 border text-left">Толщина</th>
-                        <th class="px-3 py-2 border text-left">Сверловка</th>
-                        <th class="px-3 py-2 border text-left">Примечания</th>
-                        <th class="px-3 py-2 border"></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td class="border px-2 py-1">
-                            <select name="items[0][facade_type_id]"
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">—</option>
-                                @foreach($facadeTypes as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name_ru }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td class="border px-2 py-1">
-                            <input type="number" name="items[0][height]"
-                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </td>
-                        <td class="border px-2 py-1">
-                            <input type="number" name="items[0][width]"
-                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </td>
-                        <td class="border px-2 py-1">
-                            <input type="number" name="items[0][quantity]"
-                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </td>
-                        <td class="border px-2 py-1">
-                            <select name="items[0][double_sided_coating]"
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">—</option>
-                                <option value="1">Да</option>
-                                <option value="0">Нет</option>
-                            </select>
-                        </td>
-                        <td class="border px-2 py-1">
-                            <select name="items[0][thickness]"
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="19" selected>19</option>
-                                <option value="16">16</option>
-                                <option value="22">22</option>
-                            </select>
-                        </td>
-                        <td class="border px-2 py-1">
-                            <select name="items[0][drilling_id]"
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">—</option>
-                                @foreach($drillings as $drilling)
-                                    <option value="{{ $drilling->id }}">{{ $drilling->name_ru }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td class="border px-2 py-1">
-                            <input type="text" name="items[0][notes]"
-                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </td>
-                        <td class="border px-2 py-1 text-center">
-                            <button type="button"
-                                    class="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 remove-row">
-                                Удалить
-                            </button>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
 
-            <button type="button" id="add-row"
-                    class="mt-3 inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
-                Добавить позицию
+
+    <!-- 🔹 Позиции заказа -->
+    <h4 class="text-lg font-semibold mb-2">Позиции заказа</h4>
+
+    <div class="overflow-x-auto pb-32">
+        <table class="min-w-full table-fixed border border-gray-300 border-collapse" id="order-items-table">
+            <colgroup>
+                <col style="width:96px">   <!-- Тип фасада -->
+                <col style="width:80px">   <!-- Высота -->
+                <col style="width:80px">   <!-- Ширина -->
+                <col style="width:60px">   <!-- Кол-во -->
+                <col style="width:40px">   <!-- 2стр.окр. -->
+                <col style="width:40px">   <!-- Толщ. -->
+                <col style="width:96px">   <!-- Сверловка -->
+                <col style="width:220px"> <!-- Примечания -->
+                <col style="width:40px">   <!-- Файл -->
+                <col style="width:40px">   <!-- + -->
+                <col style="width:40px">   <!-- − -->
+            </colgroup>
+
+            <thead class="bg-gray-100 text-sm">
+            <tr>
+                <th class="px-1 py-0.5 border text-left">Тип фасада</th>
+                <th class="px-1 py-0.5 border text-left">Высота</th>
+                <th class="px-1 py-0.5 border text-left">Ширина</th>
+                <th class="px-1 py-0.5 border text-left">Кол-во</th>
+                <th class="px-1 py-0.5 border text-left">2стр.окр.</th>
+                <th class="px-1 py-0.5 border text-left">Толщ.</th>
+                <th class="px-1 py-0.5 border text-left">Сверловка</th>
+                <th class="px-1 py-0.5 border text-left">Примечания</th>
+                <th class="px-1 py-0.5 border text-center no-print">Файл</th>
+                <th class="px-1 py-0.5 border text-center no-print">+</th>
+                <th class="px-1 py-0.5 border text-center no-print">−</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr class="text-sm">
+                <td class="border px-0.5 py-0">
+                    <select name="items[0][facade_type_id]"
+                            class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
+                        <option value="">—</option>
+                        @foreach($facadeTypes as $type)
+                            <option value="{{ $type->id }}">{{ $type->name_ru }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="border px-0.5 py-0">
+                    <input type="number" name="items[0][height]"
+                           class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
+                </td>
+                <td class="border px-0.5 py-0">
+                    <input type="number" name="items[0][width]"
+                           class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
+                </td>
+                <td class="border px-0.5 py-0">
+                    <input type="number" name="items[0][quantity]"
+                           class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
+                </td>
+                <td class="border px-0.5 py-0">
+                    <select name="items[0][double_sided_coating]"
+                            class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
+                        <option value="0">—</option>
+                        <option value="1">Да</option>
+                    </select>
+                </td>
+                <td class="border px-0.5 py-0">
+                    <select name="items[0][thickness]"
+                            class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
+                        @php
+                            $thicknessValues = ['19','22','16','6','10','12','14','18','25','32','38','44'];
+                        @endphp
+
+                        @foreach($thicknessValues as $value)
+                            <option value="{{ $value }}" {{ $value == '19' ? 'selected' : '' }}>
+                                {{ $value }}
+                            </option>
+                        @endforeach
+                    </select>
+                </td>
+
+                <td class="border px-0.5 py-0">
+                    <select name="items[0][drilling_id]"
+                            class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
+                        <option value="">—</option>
+                        @foreach($drillings as $drilling)
+                            <option value="{{ $drilling->id }}">{{ $drilling->name_ru }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="border px-0.5 py-0">
+                    <input type="text" name="items[0][notes]"
+                           class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
+                </td>
+
+                <td class="border px-0.5 py-0 text-center no-print">
+                    <div class="flex justify-center">
+                        <label class="w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded cursor-pointer">
+                            <!-- Heroicons PaperClip Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M21 12.79V7a2 2 0 00-2-2h-5.79a2 2 0 00-1.42.59l-7.3 7.3a2 2 0 000 2.82l5.3 5.3a2 2 0 002.82 0l7.3-7.3a2 2 0 00.59-1.42z" />
+                            </svg>
+                            <input type="file" name="items[0][attachment_path]" class="hidden">
+                        </label>
+                    </div>
+                </td>
+
+                <td class="border px-0.5 py-0 text-center no-print">
+                    <div class="flex justify-center">
+                        <button type="button"
+                                class="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded add-row">
+                            <!-- Heroicons Plus Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+
+                <td class="border px-0.5 py-0 text-center no-print">
+                    <button type="button"
+                            class="w-5 h-5 bg-red-600 text-white hover:bg-red-700 remove-row text-xs">−</button>
+                </td>
+            </tr>
+            </tbody>
+
+        </table>
+    </div>
+    <!-- Футер -->
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-300 px-6 py-2 flex justify-between items-center">
+        <!-- Итоги -->
+
+        <div class="flex space-x-8 text-sm font-semibold">
+            <div>Итого фасадов: <span id="total-quantity">0</span></div>
+            <div>Общая площадь: <span id="total-square">0</span> м²</div>
+        </div>
+
+        <!-- Кнопки -->
+        <div class="flex space-x-4" >
+            <button type="button" onclick="window.print()"
+                    class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Предварительный просмотр
             </button>
-
-            <hr class="my-6">
 
             <button type="submit"
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                Сохранить заказ
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                Отправить
             </button>
-        </form>
+
+            <button type="button" id="calculate-btn"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Расчёт
+            </button>
+        </div>
     </div>
 
-    <script>
-        let rowIndex = 1;
+    </form>
 
-        // Добавление новой строки
-        document.getElementById('add-row').addEventListener('click', function() {
-            const tableBody = document.querySelector('#order-items-table tbody');
-            const newRow = tableBody.rows[0].cloneNode(true);
-
-            // Обновляем имена полей и очищаем значения
-            Array.from(newRow.querySelectorAll('input, select')).forEach(el => {
-                const name = el.getAttribute('name');
-                if (name) {
-                    el.setAttribute('name', name.replace(/\d+/, rowIndex));
-                    // Для select оставляем пустую опцию, иначе сбрасываем
-                    if (el.tagName.toLowerCase() === 'select') {
-                        el.selectedIndex = 0;
-                    } else {
-                        el.value = '';
-                    }
-                }
-            });
-
-            tableBody.appendChild(newRow);
-            rowIndex++;
-        });
-
-        // Удаление строки
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-row')) {
-                const row = e.target.closest('tr');
-                const rows = document.querySelectorAll('#order-items-table tbody tr');
-                if (rows.length > 1) {
-                    row.remove();
-                }
-            }
-        });
-    </script>
 </x-app-layout>
 
