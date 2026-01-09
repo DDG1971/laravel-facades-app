@@ -11,6 +11,7 @@ class Status extends Model
         'label',
     ];
 
+
     public function orders()
     {
         return $this->hasMany(Order::class);

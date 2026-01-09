@@ -3,6 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+/**
+ * @property int $status_id
+ * @property int $customer_id
+ * @property string $material
+ * // и другие поля таблицы orders
+ */
 
 class Order extends Model
 {
@@ -67,4 +73,9 @@ class Order extends Model
     {
         return $this->belongsTo(Milling::class);
     }
+    protected $casts = [
+        'date_created' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }

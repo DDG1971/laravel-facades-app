@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            // переименовываем order_number → queue_number
+            // переименоваю order_number → queue_number
             $table->renameColumn('order_number', 'queue_number');
 
-            // добавляем новые поля
+            // добавляю новые поля
             $table->string('client_order_number')->nullable()->after('queue_number');
             $table->enum('material', ['MDF','Shpon'])->nullable()->after('client_order_number');
         });

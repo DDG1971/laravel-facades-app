@@ -11,6 +11,7 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/carbonphp/carbon-doctrine-types" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/composer" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/dflydev/dot-access-data" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/doctrine/dbal" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/doctrine/deprecations" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/doctrine/inflector" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/doctrine/lexer" />
@@ -70,6 +71,7 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phpunit/php-text-template" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phpunit/php-timer" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phpunit/phpunit" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/cache" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/clock" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/container" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/event-dispatcher" />

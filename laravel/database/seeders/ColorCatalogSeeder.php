@@ -16,7 +16,7 @@ class ColorCatalogSeeder extends Seeder
         foreach ($csv as $record) {
             DB::table('color_catalogs')->updateOrInsert(
                 ['name_en' => $record['name_en']], // уникальный ключ
-                [] // дополнительных полей нет, оставляем пустой массив
+                [] // дополнительных полей нет, оставляю пустой массив
             );
         }
     }

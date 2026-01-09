@@ -12,17 +12,27 @@ export default {
     ],
     safelist: [
         // Цвета текста
-        'text-gray-500', 'text-gray-700', 'text-black', 'text-white',
-        'text-red-500', 'text-green-500', 'text-blue-500',
+        'text-black', 'text-white',
+        'text-gray-500', 'text-gray-700','text-gray-800',
+        'text-red-500', 'text-red-700','text-red-800',
+        'text-green-500', 'text-green-700','text-green-800',
+        'text-blue-500','text-blue-800', 'text-yellow-700',
+        'text-indigo-800',
+        'text-yellow-800',
+        'text-purple-800',
+        'text-teal-800',
 
         // Фоны
-        'bg-white', 'bg-gray-50', 'bg-gray-100', 'bg-gray-200',
-        'bg-red-200', 'bg-green-200', 'bg-blue-200', 'bg-yellow-200',
-        'bg-green-500', 'bg-green-600',
-        'bg-red-500', 'bg-red-600',
-        'bg-blue-500', 'bg-blue-600',
-        'bg-yellow-500', 'bg-yellow-600',
-        'hover:bg-green-600', 'hover:bg-red-600',
+        'bg-white',
+        'bg-gray-50', 'bg-gray-100', 'bg-gray-200', 'bg-gray-300', 'bg-gray-400', 'bg-gray-600', 'bg-gray-800',
+        'bg-red-50','bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-500', 'bg-red-600',
+        'bg-green-50', 'bg-green-100', 'bg-green-200', 'bg-green-300', 'bg-green-500', 'bg-green-600',
+        'bg-blue-50', 'bg-blue-100', 'bg-blue-200', 'bg-blue-300', 'bg-blue-500', 'bg-blue-600',
+        'bg-yellow-50','bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-500', 'bg-yellow-600',
+        'bg-purple-100',
+        'bg-indigo-100',
+        'bg-teal-100',
+        'bg-black',
 
         // Сетка
         'grid', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4',
@@ -38,22 +48,37 @@ export default {
         'mt-0', 'mt-2', 'mt-4',
 
         // Width / Height
-        'w-auto', 'w-fit', 'w-full', 'w-16', 'w-32', 'w-48', 'w-64',
-        'h-10', 'h-12', 'h-16', 'h-32',
+        'w-auto', 'w-fit', 'w-full',
+
+        'w-8', 'w-12', 'w-16', 'w-20', 'w-24', 'w-28',
+        'w-32', 'w-36', 'w-40', 'w-48', 'w-56',
+        'w-64', 'w-72', 'w-80', 'w-96',
+        'h-8', 'h-10', 'h-12', 'h-16',
+        'h-20', 'h-24', 'h-32',
 
         // Бордеры и закругления
         'border', 'border-gray-300', 'border-gray-400',
-        'rounded', 'rounded-md', 'rounded-lg',
+        'rounded', 'rounded-md', 'rounded-lg', 'border-green-400', 'border-yellow-400',
+        'border-red-400',
 
         // Состояния
-        'hover:bg-gray-200', 'hover:bg-indigo-500',
-        'focus:ring', 'focus:ring-indigo-500',
+        'hover:bg-gray-200', 'hover:bg-gray-700', 'hover:bg-indigo-500',
+        'focus:ring', 'focus:ring-indigo-500','hover:bg-green-600', 'hover:bg-red-600',
 
         'fixed', 'bottom-0', 'left-0', 'right-0',
         'bg-gray-100', 'border-t',
         'px-6',
         'justify-between', 'items-center',
-        'pb-24', 'pb-32'
+        'pb-24', 'pb-32',
+        // Sticky header + overflow
+        'h-[70vh]', 'min-w-[60px]', 'min-w-[80px]', 'min-w-[100px]', 'min-w-[120px]', 'min-w-[200px]',
+        'table-fixed', 'border-separate',
+        'sticky', 'top-0', 'z-10', 'shadow-sm', 'shadow-md',
+        'overflow-x-auto', 'overflow-y-auto',
+        // Текстовые утилиты для обрезки
+        'truncate', 'whitespace-nowrap', 'overflow-hidden',
+        // Выравнивание текста
+        'text-left', 'text-center', 'text-right'
     ],
 
 

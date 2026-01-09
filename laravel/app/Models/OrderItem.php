@@ -18,7 +18,6 @@ class OrderItem extends Model
         'color_catalog_id',
         'color_code_id',
         'drilling_id',
-        'material',
         'thickness',
         'height',
         'width',
@@ -31,63 +30,48 @@ class OrderItem extends Model
         'payment_status',
         'prepayment',
         'paid_amount',
-        'status_id',
-        'date_status',
         'date_created',
         'double_sided_coating',
-    ];
-
-    //  Связь с заказом
-
-
+        ];
+    protected $casts = [
+        'date_created' => 'date',
+        ];
+    // Связь с заказом
     public function order()
     {
         return $this->belongsTo(Order::class);
     }
-
-    //  Связь с типом фасада
+    // Связь с типом фасада
     public function facadeType()
     {
         return $this->belongsTo(FacadeType::class);
     }
-
-    //  Связь с фрезеровкой
-    public function milling()
-    {
+    // Связь с фрезеровкой
+   public function milling()
+   {
         return $this->belongsTo(Milling::class);
-    }
-
-    //  Связь с каталогом цветов
-    public function colorCatalog()
-    {
+   }
+   // Связь с каталогом цветов
+   public function colorCatalog()
+   {
         return $this->belongsTo(ColorCatalog::class);
-    }
-
-    //  Связь с кодом цвета
-    public function colorCode()
-    {
+   }
+   // Связь с кодом цвета
+   public function colorCode()
+   {
         return $this->belongsTo(ColorCode::class);
-    }
-
-    //  Статус позиции
-    public function status()
-    {
-        return $this->belongsTo(Status::class);
-    }
-
-    //  Связь с сверлением
-    public function drilling()
-    {
-        return $this->belongsTo(Drilling::class);
-    }
-    public function isDoubleSided(): bool
-    {
-        return (bool) $this->double_sided_coating;
-    }
-    public function coatingType()
-    {
-        return $this->belongsTo(CoatingType::class);
-    }
-
-
+   }
+   // Связь с сверлением
+   public function drilling()
+   {
+       return $this->belongsTo(Drilling::class);
+   }
+   public function isDoubleSided(): bool
+   {
+       return (bool) $this->double_sided_coating;
+   }
+   public function coatingType()
+   {
+       return $this->belongsTo(CoatingType::class);
+   }
 }

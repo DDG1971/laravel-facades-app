@@ -13,4 +13,9 @@ class FacadeType extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+    public function getDisplayNameAttribute()
+    {
+        return $this->name_ru ?? $this->name_en ?? $this->name;
+    }
+
 }
