@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\CustomVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $status_id
@@ -31,7 +32,6 @@ class Order extends Model
         'date_received',
         'date_status',
         'payment_status',
-        'prepayment',
         'paid_amount',
     ];
     public function customer()
@@ -73,9 +73,29 @@ class Order extends Model
     {
         return $this->belongsTo(Milling::class);
     }
+    public function getTotalSquareAttribute()
+    {
+        return $this->items->sum(function($item) {
+
+           return ($item->height * $item->width / 1_000_000) * $item->quantity;
+        });
+    }
     protected $casts = [
         'date_created' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+    public function calculateTotal(string $priceGroup = 'retail'): float
+    {
+        return $this->items->sum(function ($item) use ($priceGroup)
+        {
+            return $item->calculatePrice($priceGroup);
+        });
+    }
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new CustomVerifyEmail);
+    }
+
+
 }

@@ -23,8 +23,8 @@
             <div class="p-6 bg-white shadow rounded">
                 <h2 class="font-semibold">📦 Orders</h2>
                 <p>Создание и управление заказами.</p>
-                <a href="{{ route('orders.create') }}" class="text-blue-600">➕ Новый заказ</a>
-                <a href="{{ route('orders.index') }}" class="text-blue-600">📋 Список заказов</a>
+                <a href="{{ route('admin.orders.create') }}" class="text-blue-600">➕ Новый заказ</a>
+                <a href="{{ route('admin.orders.index') }}" class="text-blue-600">📋 Список заказов</a>
             </div>
 
             <div class="p-6 bg-white shadow rounded">
@@ -39,12 +39,50 @@
                 <a href="{{ url('/admin/clients') }}" class="text-blue-600">Перейти</a>
             </div>
 
-            <!-- 🔹 Новый блок статистики -->
+            <!--  блок статистики -->
             <div class="p-6 bg-white shadow rounded">
                 <h2 class="font-semibold">📊 Statistics</h2>
                 <p>Общая квадратура заказов за месяц:</p>
                 <p class="text-xl font-bold">{{ $totalSquare }} м²</p>
             </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🪚 Millings</h2>
+                <p>Редактирование списка фрезеровок и цен.</p>
+                <a href="{{ route('millings.index') }}" class="text-blue-600">📋 Список фрезеровок</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🪟 Facade Types</h2>
+                <p>Редактирование списка типов фасадов (витрины, решётки и др.).</p>
+                <a href="{{ route('facade-types.index') }}" class="text-blue-600">📋 Список типов</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🎨 Color Catalogs</h2>
+                <p>Редактирование списка  каталогов цвета (RAL,WCP и др.).</p>
+                <a href="{{ route('color_catalogs.index') }}" class="text-blue-600">📋 Список каталогов</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🟥 🟩 🟦 Color Codes</h2>
+                <p>Редактирование списка кодов цвета .</p>
+                <a href="{{ route('color_codes.index') }}" class="text-blue-600">📋 Список №цветов</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">🖌️ Coating Types</h2>
+                <p>Редактирование списка покрытий  .</p>
+                <a href="{{ route('coating-types.index') }}" class="text-blue-600">📋 Список покрытий</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">📏 Thicknesses</h2>
+                <p>Редактирование списка толщин.</p>
+                <a href="{{ route('thicknesses.index') }}" class="text-blue-600">📋 Список толщин</a>
+            </div>
+
+
         </div>
     </div>
 </x-app-layout>

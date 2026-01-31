@@ -8,7 +8,7 @@
     </x-slot>
 
     <!-- 🔹 Форма -->
-    <form method="POST" action="{{ route('orders.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('admin.orders.store') }}" enctype="multipart/form-data">
         @csrf
 
         <!-- 🔹 Шапка заказа -->
@@ -181,17 +181,16 @@
                             <option value="1">Да</option>
                         </select>
                     </td>
+
                     <td class="border px-0.5 py-0">
-                        <select name="items[__INDEX__][thickness]"
+                        <select name="items[__INDEX__][thickness_id]"
                                 class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
-                            @php
-                                $thicknessValues = ['19','22','16','6','10','12','14','18','25','32','38','44'];
-                            @endphp
-                            @foreach($thicknessValues as $value)
-                                <option value="{{ $value }}">{{ $value }}</option>
+                            @foreach($thicknesses as $thickness)
+                                <option value="{{ $thickness->id }}">{{ $thickness->label ?? $thickness->value }}</option>
                             @endforeach
                         </select>
                     </td>
+
                     <td class="border px-0.5 py-0">
                         <select name="items[__INDEX__][drilling_id]"
                                 class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
@@ -262,19 +261,18 @@
                             <option value="1">Да</option>
                         </select>
                     </td>
+
                     <td class="border px-0.5 py-0">
-                        <select name="items[0][thickness]"
+                        <select name="items[0][thickness_id]"
                                 class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
-                            @php
-                                $thicknessValues = ['19','22','16','6','10','12','14','18','25','32','38','44'];
-                            @endphp
-                            @foreach($thicknessValues as $value)
-                                <option value="{{ $value }}" {{ $value == '19' ? 'selected' : '' }}>
-                                    {{ $value }}
+                            @foreach($thicknesses as $thickness)
+                                <option value="{{ $thickness->id }}" {{ $thickness->value == 19 ? 'selected' : '' }}>
+                                    {{ $thickness->label ?? $thickness->value }}
                                 </option>
                             @endforeach
                         </select>
                     </td>
+
                     <td class="border px-0.5 py-0">
                         <select name="items[0][drilling_id]"
                                 class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">

@@ -9,6 +9,8 @@ services:
       - ../laravel:/var/www/html
     depends_on:
       - db
+    networks:
+      - laravel-network
 
   db:
     image: mysql:8.0
@@ -22,6 +24,8 @@ services:
       - "3308:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - laravel-network
 
   nginx:
     image: nginx:alpine
@@ -32,13 +36,12 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
-  maildev:
-    image: maildev/maildev
+    networks:
+      - laravel-network
+  mailhog:
+    image: mailhog/mailhog
     restart: unless-stopped
-    environment:
-      - TZ=Asia/Shanghai
-      - MAILDEV_WEB_PORT=1080
-      - MAILDEV_SMTP_PORT=1025
+
     ports:
       - "1080:1080"
       - "1025:1025"
@@ -48,6 +51,7 @@ services:
         max-size: "1m"
     networks:
       - laravel-network
+
 
 
 volumes:

@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended($this->redirectPath());
+        return redirect($this->redirectPath());
     }
 
     protected function redirectPath(): string
@@ -36,10 +36,11 @@ class AuthenticatedSessionController extends Controller
         $user = auth()->user();
 
         return match ($user->role) {
-            'admin' => '/admin/dashboard',
-            'manager' => '/orders',
-            'customer' => '/dashboard',
-            default => '/dashboard',
+            'admin' => route('admin.dashboard'),
+            'manager' => route('manager.dashboard'),
+            'customer' => route('client.dashboard'),
+            'pending' => route('dashboard'),
+            default => route('dashboard'),
         };
     }
 

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CalculationMail;
 use App\Models\Milling;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Customer;
 use App\Models\Status;
+use App\Models\Thickness;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +19,9 @@ use App\Models\ColorCatalog;
 use App\Models\CoatingType;
 use App\Models\Drilling;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+
 
 
 class OrderController extends Controller
@@ -41,14 +47,23 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $customers     = Customer::all();
-        $statuses      = Status::all();
-        $facadeTypes   = FacadeType::all();
-        $colors        = ColorCode::all();
+        $customers = Customer::all();
+        $statuses = Status::all();
+        $facadeTypes = FacadeType::all();
+        $colors = ColorCode::all();
         $colorCatalogs = ColorCatalog::all();
-        $coatingTypes  = CoatingType::all();
-        $drillings     = Drilling::all();
-        $millings      = Milling::all();   // твоя модель сверловки
+        $coatingTypes = CoatingType::all();
+        $drillings = Drilling::all();
+        $millings = Milling::all();
+        $thicknesses = Thickness::orderByRaw("
+         CASE value
+          WHEN 19 THEN 1
+          WHEN 22 THEN 2
+          WHEN 16 THEN 3
+          WHEN 38 THEN 4
+          ELSE 5
+           END
+        ")->orderBy('value')->get();
 
         return view('orders.create', compact(
             'customers',
@@ -58,9 +73,33 @@ class OrderController extends Controller
             'colorCatalogs',
             'coatingTypes',
             'drillings',
-            'millings'
+            'millings',
+            'thicknesses'
         ));
     }
+
+    public function createClient()
+    {
+        $customer = auth()->user()->customer; // только свой клиент
+        $facadeTypes = FacadeType::all();
+        $colors = ColorCode::all();
+        $colorCatalogs = ColorCatalog::all();
+        $coatingTypes = CoatingType::all();
+        $drillings = Drilling::all();
+        $millings = Milling::all();
+        $thicknesses = Thickness::orderBy('value')->get();
+
+        return view('client.create', compact(
+            'customer',
+            'facadeTypes',
+            'colors', 'colorCatalogs',
+            'coatingTypes',
+            'drillings',
+            'millings',
+            'thicknesses'
+        ));
+    }
+
 
     /**
      * Сохранение нового заказа и его позиций.
@@ -69,8 +108,8 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         // Валидация
-        $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+        $rules = [
+            //'customer_id' => 'required|exists:customers,id',
             'client_order_number' => 'nullable|string|max:50',
             'date_received' => 'nullable|date',
             'material' => 'required|string',
@@ -87,35 +126,41 @@ class OrderController extends Controller
             'coating_type_id' => 'nullable|exists:coating_types,id',
             'milling_id' => 'nullable|exists:millings,id',
 
+            // Позиции
             'items.*.height' => 'nullable|integer|min:1',
             'items.*.width' => 'nullable|integer|min:1',
             'items.*.quantity' => 'nullable|integer|min:1',
-            'items.*.thickness' => 'nullable|in:6,10,12,14,16,18,19,22,25,32,38,44',
+            'items.*.thickness_id' => 'required|exists:thicknesses,id',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
-            'items.*.milling_id' => 'nullable|exists:millings,id',
-            'items.*.coating_type_id' => 'nullable|exists:coating_types,id',
-            'items.*.color_catalog_id' => 'nullable|exists:color_catalogs,id',
-            'items.*.color_code_id' => 'nullable|exists:color_codes,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
             'items.*.notes' => 'nullable|string',
             'items.*.unit_price' => 'nullable|numeric|min:0',
             'items.*.total_price' => 'nullable|numeric|min:0',
             'order_attachment' => 'nullable|file|mimes:pdf,jpg,png,doc,docx',
             'items.*.attachment' => 'nullable|file|mimes:pdf,jpg,png,doc,docx',
-        ]);
+        ];
+
+        // 🔹 Если админ — добавляем проверку customer_id
+        if (auth()->user()->role === 'admin') {
+            $rules['customer_id'] = 'required|exists:customers,id';
+        }
+        // 🔹 Валидация
+        $request->validate($rules);
+        // 🔹 Определяем customer_id
+        $customerId = auth()->user()->role === 'customer'
+            ? auth()->user()->customer_id
+            : $request->input('customer_id');
 
         // Статус по умолчанию
         $defaultStatusId = optional(Status::firstWhere('name', 'new'))->id
             ?? Status::min('id');
 
         $clientOrderNumber = trim($request->input('client_order_number') ?? '');
-        $customerId = $request->input('customer_id');
         $today = now()->toDateString();
 
-        // Если номер пустой → подставляем "б/н-<queue_number>" позже, после получения queue_number
         $clientOrderNumber = $clientOrderNumber === '' ? null : $clientOrderNumber;
 
-        // Проверка на дубликат (только если номер указан)
+        // Проверка на дубликат
         $duplicateFound = false;
         if ($clientOrderNumber) {
             $duplicateFound = Order::where('customer_id', $customerId)
@@ -124,22 +169,12 @@ class OrderController extends Controller
                 ->exists();
         }
 
-        $material = $request->input('material');
-        $colorCatalogId = $request->input('color_catalog_id');
-        $colorCodeId = $request->input('color_code_id');
-        $coatingTypeId = $request->input('coating_type_id');
-        $millingId = $request->input('milling_id');
-
         $order = DB::transaction(function () use (
             $defaultStatusId,
             $clientOrderNumber,
             $today,
             $customerId,
-            $material,
-            $colorCatalogId,
-            $colorCodeId,
-            $coatingTypeId,
-            $millingId
+            $request
         ) {
             $lastQueue = Order::lockForUpdate()->max('queue_number') ?? 0;
             $queueNumber = $lastQueue + 1;
@@ -151,19 +186,13 @@ class OrderController extends Controller
                 'date_received' => $today,
                 'queue_number' => $queueNumber,
                 'client_order_number' => $clientOrderNumber ?? ('б/н-' . $queueNumber),
-                'material' => $material,
-                'color_catalog_id' => $colorCatalogId,
-                'color_code_id' => $colorCodeId,
-                'coating_type_id' => $coatingTypeId,
-                'milling_id' => $millingId,
+                'material' => $request->input('material'),
+                'color_catalog_id' => $request->input('color_catalog_id'),
+                'color_code_id' => $request->input('color_code_id'),
+                'coating_type_id' => $request->input('coating_type_id'),
+                'milling_id' => $request->input('milling_id'),
             ]);
         });
-
-        // Если нашли дубликат → обновляем флаг
-       // if ($duplicateFound) {
-       //     $order->duplicate = true;
-       //     $order->save();
-       // }
 
         // Вложение для заказа
         if ($request->hasFile('order_attachment')) {
@@ -173,7 +202,7 @@ class OrderController extends Controller
         }
 
         // Позиции
-        foreach ($request->input('items', []) as $index => $item) {
+        foreach ($request->input('items', []) as $item) {
             if (empty($item['height']) && empty($item['width']) && empty($item['quantity'])) {
                 continue;
             }
@@ -186,11 +215,7 @@ class OrderController extends Controller
             OrderItem::create([
                 'order_id' => $order->id,
                 'facade_type_id' => $item['facade_type_id'] ?? null,
-                'milling_id' => $item['milling_id'] ?? null,
-                'coating_type_id' => $item['coating_type_id'] ?? null,
-                'color_catalog_id' => $item['color_catalog_id'] ?? null,
-                'color_code_id' => $item['color_code_id'] ?? null,
-                'thickness' => $item['thickness'],
+                'thickness_id' => $item['thickness_id'],
                 'height' => $item['height'],
                 'width' => $item['width'],
                 'square_meters' => $item['square_meters'] ?? null,
@@ -206,7 +231,7 @@ class OrderController extends Controller
         }
 
         // Пересчёт итогов
-        $order->load('items', 'colorCatalog', 'colorCode', 'coatingType', 'milling');
+        $order->load('items');
 
         $totalSquare = 0;
         $totalPrice = 0;
@@ -253,7 +278,7 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        $order->load('items');
+        $order->load('items.thickness');
 
         $customers = Customer::all();
         $statuses = Status::all();
@@ -263,6 +288,15 @@ class OrderController extends Controller
         $millings = Milling::all();
         $facadeTypes = FacadeType::all();
         $drillings = Drilling::all();
+        $thicknesses = Thickness::orderByRaw("
+         CASE value
+           WHEN 19 THEN 1
+           WHEN 22 THEN 2
+           WHEN 16 THEN 3
+           WHEN 38 THEN 4
+           ELSE 5
+            END
+         ")->orderBy('value')->get();
 
         return view('orders.edit', compact(
             'order',
@@ -273,7 +307,8 @@ class OrderController extends Controller
             'coatingTypes',
             'millings',
             'facadeTypes',
-            'drillings'
+            'drillings',
+            'thicknesses'
         ));
     }
 
@@ -287,7 +322,7 @@ class OrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'client_order_number' => 'nullable|string|max:50',
             'date_received' => 'nullable|date',
-            'material'    => 'required|string',
+            'material' => 'required|string',
             'color_catalog_id' => 'nullable|exists:color_catalogs,id',
             'color_code_id' => ['required', 'exists:color_codes,id',
                 function ($attribute, $value, $fail) use ($request) {
@@ -301,15 +336,12 @@ class OrderController extends Controller
             'coating_type_id' => 'nullable|exists:coating_types,id',
             'milling_id' => 'nullable|exists:millings,id',
 
+            // Позиции
             'items.*.height' => 'required|integer|min:1',
             'items.*.width' => 'required|integer|min:1',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.thickness' => 'nullable|in:6,10,12,14,16,18,19,22,25,32,38,44',
+            'items.*.thickness_id' => 'required|exists:thicknesses,id',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
-            'items.*.milling_id' => 'nullable|exists:millings,id',
-            'items.*.coating_type_id' => 'nullable|exists:coating_types,id',
-            'items.*.color_catalog_id' => 'nullable|exists:color_catalogs,id',
-            'items.*.color_code_id' => 'nullable|exists:color_codes,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
             'items.*.notes' => 'nullable|string',
             'items.*.unit_price' => 'nullable|numeric|min:0',
@@ -318,16 +350,16 @@ class OrderController extends Controller
             'items.*.attachment' => 'nullable|file|mimes:pdf,jpg,png,doc,docx',
         ]);
 
-        // Данные «шапки» заказа (статус оставляем как есть)
+        // Данные «шапки» заказа
         $orderData = [
-            'customer_id'         => $validated['customer_id'],
-            'status_id'           => $order->status_id,
+            'customer_id' => $validated['customer_id'],
+            'status_id' => $order->status_id,
             'client_order_number' => $request->input('client_order_number'),
-            'color_catalog_id'    => $request->input('color_catalog_id'),
-            'color_code_id'       => $request->input('color_code_id'),
-            'coating_type_id'     => $request->input('coating_type_id'),
-            'material'            => $request->input('material'),
-            'milling_id'          => $request->input('milling_id'),
+            'color_catalog_id' => $request->input('color_catalog_id'),
+            'color_code_id' => $request->input('color_code_id'),
+            'coating_type_id' => $request->input('coating_type_id'),
+            'material' => $request->input('material'),
+            'milling_id' => $request->input('milling_id'),
         ];
 
         if ($request->hasFile('order_attachment')) {
@@ -335,105 +367,87 @@ class OrderController extends Controller
                 ->store('orders/attachments', 'public');
         }
 
-        // ВАЖНО: реально обновить заказ
-        try {
-            $order->update($orderData);
-        } catch (\Throwable $e) {
-            dd('ORDER UPDATE FAILED', $e->getMessage());
-        }
+        $order->update($orderData);
 
         // Позиции
         $items = $request->input('items', []);
         unset($items['__INDEX__']);
 
         foreach ($items as $itemData) {
-            // пропуск пустых
             if (empty($itemData['height']) && empty($itemData['width']) && empty($itemData['quantity'])) {
                 continue;
             }
 
-            // обновление существующей позиции
+            $attachmentPath = null;
+            if (isset($itemData['attachment']) && $itemData['attachment'] instanceof \Illuminate\Http\UploadedFile) {
+                $attachmentPath = $itemData['attachment']->store('order_items/attachments', 'public');
+            }
+
             if (!empty($itemData['id'])) {
+                // обновление существующей позиции
                 $item = OrderItem::find($itemData['id']);
                 if ($item) {
-                    $attachmentPath = $item->attachment_path;
-                    if (isset($itemData['attachment']) && $itemData['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-                        $attachmentPath = $itemData['attachment']->store('order_items/attachments', 'public');
-                    }
-
                     $item->update([
-                        'facade_type_id'       => $itemData['facade_type_id'] ?? null,
-                        'milling_id'           => $itemData['milling_id'] ?? null,
-                        'coating_type_id'      => $itemData['coating_type_id'] ?? null,
-                        'color_catalog_id'     => $itemData['color_catalog_id'] ?? null,
-                        'color_code_id'        => $itemData['color_code_id'] ?? null,
-                        'thickness'            => $itemData['thickness'],
-                        'height'               => $itemData['height'],
-                        'width'                => $itemData['width'],
-                        'square_meters'        => $itemData['square_meters'] ?? null,
-                        'quantity'             => $itemData['quantity'],
+                        'facade_type_id' => $itemData['facade_type_id'] ?? null,
+                        'thickness_id' => $itemData['thickness_id'],
+                        'height' => $itemData['height'],
+                        'width' => $itemData['width'],
+                        'square_meters' => $itemData['square_meters'] ?? null,
+                        'quantity' => $itemData['quantity'],
                         'double_sided_coating' => $itemData['double_sided_coating'] ?? false,
-                        'drilling_id'          => $itemData['drilling_id'] ?? null,
-                        'notes'                => $itemData['notes'] ?? null,
-                        'unit_price'           => $itemData['unit_price'] ?? 0,
-                        'total_price'          => $itemData['total_price'] ?? 0,
-                        'attachment_path'      => $attachmentPath,
+                        'drilling_id' => $itemData['drilling_id'] ?? null,
+                        'notes' => $itemData['notes'] ?? null,
+                        'unit_price' => $itemData['unit_price'] ?? 0,
+                        'total_price' => $itemData['total_price'] ?? 0,
+                        'attachment_path' => $attachmentPath ?? $item->attachment_path,
                     ]);
                 }
-            }
-            // создание новой позиции
-            else {
-                $attachmentPath = null;
-                if (isset($itemData['attachment']) && $itemData['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-                    $attachmentPath = $itemData['attachment']->store('order_items/attachments', 'public');
-                }
-
+            } else {
+                // создание новой позиции
                 $order->items()->create([
-                    'facade_type_id'       => $itemData['facade_type_id'] ?? null,
-                    'milling_id'           => $itemData['milling_id'] ?? null,
-                    'coating_type_id'      => $itemData['coating_type_id'] ?? null,
-                    'color_catalog_id'     => $itemData['color_catalog_id'] ?? null,
-                    'color_code_id'        => $itemData['color_code_id'] ?? null,
-                    'thickness'            => $itemData['thickness'],
-                    'height'               => $itemData['height'],
-                    'width'                => $itemData['width'],
-                    'square_meters'        => $itemData['square_meters'] ?? null,
-                    'quantity'             => $itemData['quantity'],
+                    'facade_type_id' => $itemData['facade_type_id'] ?? null,
+                    'thickness_id' => $itemData['thickness_id'],
+                    'height' => $itemData['height'],
+                    'width' => $itemData['width'],
+                    'square_meters' => $itemData['square_meters'] ?? null,
+                    'quantity' => $itemData['quantity'],
                     'double_sided_coating' => $itemData['double_sided_coating'] ?? false,
-                    'drilling_id'          => $itemData['drilling_id'] ?? null,
-                    'notes'                => $itemData['notes'] ?? null,
-                    'unit_price'           => $itemData['unit_price'] ?? 0,
-                    'total_price'          => $itemData['total_price'] ?? 0,
-                    'attachment_path'      => $attachmentPath,
+                    'drilling_id' => $itemData['drilling_id'] ?? null,
+                    'notes' => $itemData['notes'] ?? null,
+                    'unit_price' => $itemData['unit_price'] ?? 0,
+                    'total_price' => $itemData['total_price'] ?? 0,
+                    'attachment_path' => $attachmentPath,
                 ]);
             }
         }
 
         // Пересчёт итогов
         $order->load('items');
-        $totalSquare = $order->items->sum(function($item) {
-            return $item->square_meters
-                ?? (($item->height * $item->width / 1_000_000) * $item->quantity);
-        });
+        $totalSquare = $order->items->sum(fn($item) => $item->square_meters ?? (($item->height * $item->width / 1_000_000) * $item->quantity)
+        );
         $totalPrice = $order->items->sum('total_price');
 
         $order->update([
             'square_meters' => $totalSquare,
-            'total_price'   => $totalPrice,
+            'total_price' => $totalPrice,
         ]);
 
         return redirect()->route('orders.show', $order->id)
             ->with('success', 'Заказ успешно обновлён');
     }
 
-    /**
-     * Удаление позиции из заказа.
-     */
-    public function destroyItem(OrderItem $item)
+    public function indexClient()
     {
-        $item->delete();
-        return back();
+        $customer = auth()->user()->customer;
+        // Загружаем только заказы этого клиента
+        $orders = Order::where('customer_id', $customer->id)
+            ->with(['status', 'colorCatalog', 'colorCode', 'coatingType', 'milling'])
+            ->orderByDesc('date_received')
+            ->get();
+
+        return view('client.index', compact('orders', 'customer'));
     }
+
 
     /**
      * Подтверждение заказа клиентом.
@@ -441,13 +455,26 @@ class OrderController extends Controller
     public function submit(Order $order)
     {
         $order->update([
-            //'status_id' => Status::where('name','received')->first()->id,
-            'date_status' => now(), // полезно фиксировать дату смены статуса
+            'date_status' => now(),
         ]);
+        $user = auth()->user();
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Заказ отправлен в список!');
+        if ($user->hasRole('admin')) {
+            return redirect()->route('admin.orders.index')
+                ->with('success', 'Заказ отправлен!');
+        }
+        if ($user->hasRole('customer')) {
+            return redirect()->route('orders.index')
+                ->with('success', 'Заказ отправлен!');
+        }
+        if ($user->hasRole('manager')) {
+            return redirect()->route('manager.dashboard')
+                ->with('success', 'Заказ отправлен!');
+        }
+        return redirect()->route('dashboard')
+            ->with('success', 'Заказ отправлен!');
     }
+
     public function preview(Order $order)
     {
         $items = $order->items;
@@ -457,5 +484,136 @@ class OrderController extends Controller
         return view('orders.preview', compact('order', 'items', 'totalQuantity', 'totalSquare'));
     }
 
+    /**
+     * Удаление позиции из заказа.
+     */
+
+    public function destroyItem(OrderItem $item)
+    {
+        $item->delete();
+
+        return back();
+    }
+
+    /**
+     * На пилу.
+     */
+    public function saw(Order $order)
+    {
+        $items = $order->items()->with(['milling', 'facadeType'])->get();
+
+        return view('orders.saw', compact('order', 'items'));
+    }
+
+    public function manage(Order $order, Request $request)
+    {
+        $priceGroup = $request->input('price_group', 'retail');
+
+        $allowed = ['retail', 'dealer', 'private'];
+        if (!in_array($priceGroup, $allowed, true)) {
+            $priceGroup = 'retail';  // дефолт
+        }
+
+        $customers = Customer::all();
+        $colorCatalogs = ColorCatalog::all();
+        $colors = ColorCode::all();
+        $coatingTypes = CoatingType::all();
+        $millings = Milling::all();
+        $facadeTypes = FacadeType::all();
+        $thicknesses = Thickness::all();
+        $drillings = Drilling::all();
+        $statuses = Status::all();
+
+        return view('orders.manage', compact(
+            'order',
+            'customers',
+            'colorCatalogs',
+            'colors',
+            'coatingTypes',
+            'millings',
+            'facadeTypes',
+            'thicknesses',
+            'drillings',
+            'statuses',
+            'priceGroup',
+        ));
+    }
+
+    public function updateStatus(Request $request, Order $order)
+    {
+        $order->status_id = $request->input('status_id');
+        $order->save();
+
+        return redirect()->route('orders.manage', $order->id)
+            ->with('success', 'Статус заказа обновлён.');
+    }
+
+    public function sendToClient(Order $order, Request $request)
+    {
+        $priceGroup = $request->input('price_group', 'retail');
+        // или можно брать из $order->customer->price_group
+        return view('orders.partials.calculation-client', compact('order', 'priceGroup'));
+    }
+
+   public function exportClientPdf(Order $order, Request $request)
+    {
+        $priceGroup = $request->input('price_group', 'retail');
+        $allowed = ['retail', 'dealer', 'private'];
+        if (!in_array($priceGroup, $allowed, true)) {
+            $priceGroup = 'retail';
+        }
+        // 🔹 подключаем наш клиентский шаблон
+        $pdf = Pdf::loadView('orders.pdf.calculation-client', [
+            'order' => $order,
+            'priceGroup' => $priceGroup,
+        ]);
+
+        return $pdf->download("order-{$order->queue_number}-calculation.pdf");
+    }
+
+    public function sendCalculation(Order $order, Request $request)
+    {  //$pdf = Pdf::loadHTML('<h1>Тестовый PDF</h1>');
+        // $recipient = $order->customer?->email ?? 'test@example.com'; Mail::raw('Во вложении расчёт заказа', function ($message) use ($order, $pdf, $recipient) { $message->to($recipient) ->subject("Расчёт заказа №{$order->id}") ->attachData($pdf->output(), "order-{$order->id}-calculation.pdf"); }); return back()->with('success', "Расчёт отправлен на {$recipient}!");
+        //Mail::raw('Тестовое письмо', function ($message) { $message->to('test@example.com') ->subject('MailHog test'); });
+        $order->load([
+            'customer',
+            'colorCatalog',
+            'colorCode',
+            'coatingType',
+            'milling',
+            'items.facadeType',
+            'items.thickness'
+        ]);
+
+        $priceGroup = $request->input('price_group', 'retail');
+        $allowed = ['retail', 'dealer', 'private'];
+        if (!in_array($priceGroup, $allowed, true)) {
+            $priceGroup = 'retail';
+        }
+
+        $recipient = $order->customer?->users()->first()?->email;
+
+        if (empty($recipient)) {
+
+            return back()->with('error', 'У клиента не найден ни один пользователь с email.');
+        }
+
+        $pdf = Pdf::loadView('orders.pdf.calculation-client', [
+            'order' => $order,
+            'priceGroup' => $priceGroup,
+            //'customers' => Customer::all(), 'colorCatalogs' => ColorCatalog::all(), 'colors' => ColorCode::all(), 'coatingTypes' => CoatingType::all(), 'millings' => Milling::all(), 'orderDate' => $order->created_at, 'clientNumber' => $order->client_number, 'material' => $order->material,
+        ]);
+
+        Mail::raw('Во вложении расчёт заказа', function ($message) use ($order, $pdf, $recipient) {
+            $message->to($recipient)
+                ->subject("Расчёт заказа №{$order->queue_number}")
+                ->attachData(
+                    $pdf->output(),
+                    "order-{$order->queue_number}-calculation.pdf");
+        });
+
+        return back()->with('success', 'Расчёт отправлен клиенту напрямую!');
+
+    }
 
 }

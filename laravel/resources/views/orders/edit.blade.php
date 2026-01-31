@@ -193,10 +193,13 @@
                             </select>
                         </td>
                         <td class="border">
-                            <select name="items[{{ $index }}][thickness]"  class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
-                                @php $thicknessValues = ['19','22','16','6','10','12','14','18','25','32','38','44']; @endphp
-                                @foreach($thicknessValues as $value)
-                                    <option value="{{ $value }}" {{ old("items.$index.thickness", $item->thickness) == $value ? 'selected' : '' }}>{{ $value }}</option>
+                            <select name="items[{{ $index }}][thickness_id]"
+                                    class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
+                                @foreach($thicknesses as $thickness)
+                                    <option value="{{ $thickness->id }}"
+                                        {{ old("items.$index.thickness_id", $item->thickness_id) == $thickness->id ? 'selected' : '' }}>
+                                        {{ $thickness->label ?? $thickness->value }}
+                                    </option>
                                 @endforeach
                             </select>
                         </td>
@@ -250,9 +253,9 @@
                         </select>
                     </td>
                     <td class="border">
-                        <select name="items[__INDEX__][thickness]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
-                            @foreach($thicknessValues as $value)
-                                <option value="{{ $value }}">{{ $value }}</option>
+                        <select name="items[__INDEX__][thickness_id]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
+                            @foreach($thicknesses as $thickness)
+                                <option value="{{ $thickness->id }}">{{ $thickness->label ?? $thickness->value }}</option>
                             @endforeach
                         </select>
                     </td>

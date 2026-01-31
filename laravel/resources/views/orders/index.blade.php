@@ -56,7 +56,7 @@
                 <table class="w-full table-fixed border-separate text-sm">
                     <colgroup>
                         <col class="w-[60px]" />
-                        <col class="w-[145px]" />  <!-- Клиент -->
+                        <col class="w-[140px]" />  <!-- Клиент -->
                         <col class="w-[120px]" />
                         <col class="w-[120px]" />
                         <col class="w-[100px]" />   <!-- Мат-лы -->
@@ -85,7 +85,7 @@
             @case('cancelled') bg-red-100 text-red-800 @break
         @endswitch
     ">
-                            <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
+                                <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
                             <td class="border px-2 py-1 truncate overflow-hidden whitespace-nowrap">
                                 {{ $order->customer->company_name ?? 'нет данных' }}
                             </td>
@@ -103,10 +103,26 @@
                             <td class="border px-2 py-1 text-center">
                                 {{ $order->date_status ? \Carbon\Carbon::parse($order->date_status)->format('d.m.Y') : '—' }}
                             </td>
-                            <td class="border px-2 py-1 text-center">{{ $order->paint_shop_id }}</td>
+                          {{--  <td class="border px-2 py-1 text-center">{{ $order->paint_shop_id }}</td>--}}
+                            <td class="border px-2 py-1 text-center">
+                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
+                                    <a href="{{ route('orders.manage', $order->id) }}"
+                                       class="px-2 py-1 underline hover:font-bold">
+                                        ⚙ Управление
+                                    </a>
+                                @endif
+                            </td>
                             <td class="border px-2 py-1 space-x-2 text-center">
-                                <a href="{{ route('orders.preview', $order) }}" class="text-blue-600 hover:underline">Просмотр</a>
-                                <a href="{{ route('orders.edit', $order) }}" class="text-green-600 hover:underline">Редактировать</a>
+                                <a href="{{ route('orders.preview', $order) }}"
+                                   class="text-blue-600 hover:underline"
+                                   title="Печать">
+                                    🖨️
+                                </a>
+                                <a href="{{ route('orders.edit', $order) }}"
+                                   class="text-green-600 hover:underline"
+                                   title="Редактировать">
+                                    ✏️
+                                </a>
                             </td>
                         </tr>
                     @empty

@@ -9,6 +9,8 @@ class CoatingType extends Model
     protected $fillable = [
         'name',
         'label',
+        'description',
+        'price'
         ];
     public function orders()
     {

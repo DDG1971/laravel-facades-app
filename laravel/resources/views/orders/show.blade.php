@@ -61,31 +61,58 @@
                 <th class="border px-2 py-1 w-20 truncate">Сверловка</th>
                 <th class="border px-2 py-1 w-16">2‑х сторон. окрас</th>
                 <th class="border px-2 py-1 w-20 text-center">Квадратура</th>
+                <th class="border px-2 py-1 w-20 text-center">Ставка за м²</th>
+                <th class="border px-2 py-1 w-20 text-center">Цена</th>
                 <th class="border px-2 py-1 w-32 truncate">Примечания</th>
             </tr>
             </thead>
             <tbody>
             @foreach($order->items as $item)
+                @php
+                    $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
+                    $millingBase = $order->milling?->getBasePriceFor('retail') ?? 0;
+                    $resolved = $item->facadeType?->resolvePricing($millingBase, 'm2')
+                        ?? ['base' => $millingBase, 'unit' => 'm2'];
+                    $unitPrice = $resolved['base']
+                        + ($item->thickness?->price ?? 0)
+                        + ($order->coatingType?->price ?? 0);
+                    $finalPrice = $item->calculatePrice('retail');
+                @endphp
                 <tr>
                     <td class="border px-2 py-1 truncate">{{ $item->facadeType->name_ru ?? '—' }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->height }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->width }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->quantity }}</td>
-                    <td class="border px-2 py-1 text-center">{{ $item->thickness }}</td>
+                    <td class="border px-2 py-1 text-center">
+                        {{ $item->thickness->label ?? $item->thickness->value ?? '—' }}
+                    </td>
                     <td class="border px-2 py-1 truncate">{{ $item->drilling->name_ru ?? '—' }}</td>
                     <td class="border px-2 py-1 text-center">
                         {{ $item->double_sided_coating ? 'Да' : '—' }}
                     </td>
                     <td class="border px-2 py-1 text-center">
-                        {{ number_format(($item->height * $item->width / 1000000) * $item->quantity, 2, ',', ' ') }}
+                        {{ number_format($area, 2, ',', ' ') }}
+                    </td>
+                    <td class="border px-2 py-1 text-center">
+                        {{ number_format($unitPrice, 1, ',', ' ') }}
+                    </td>
+                    <td class="border px-2 py-1 text-center">
+                        {{ number_format($finalPrice, 1, ',', ' ') }}
                     </td>
                     <td class="border px-2 py-1 truncate">{{ $item->notes ?? '—' }}</td>
                 </tr>
             @endforeach
             </tbody>
+            <tfoot>
+            <tr>
+                <td colspan="7" class="border px-2 py-1 text-right font-bold">Итого:</td>
+                <td class="border px-2 py-1 text-center">{{ number_format($order->total_square, 2, ',', ' ') }}</td>
+                <td></td>
+                <td class="border px-2 py-1 text-center font-bold">{{ number_format($order->calculateTotal('retail'), 1, ',', ' ') }}</td>
+                <td></td>
+            </tr>
+            </tfoot>
         </table>
-
-
 
         {{-- Кнопки действий --}}
         <div class="mt-4 flex gap-4">

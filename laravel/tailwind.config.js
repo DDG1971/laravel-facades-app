@@ -43,12 +43,13 @@ export default {
         'justify-center', 'justify-between', 'justify-start', 'justify-end',
 
         // Отступы
-        'p-2', 'p-4', 'px-2', 'px-3', 'px-4', 'py-2', 'py-3', 'py-4',
+        'p-2', 'p-4', 'px-2', 'px-3', 'px-4','px-8', 'py-2', 'py-3', 'py-4',
         'mb-0', 'mb-1', 'mb-2', 'mb-3', 'mb-4', 'mb-6',
-        'mt-0', 'mt-2', 'mt-4',
+        'mt-0', 'mt-2', 'mt-4','ml-24',
+        'ml-8','ml-16','-ml-8','-ml-12','-ml-16',
 
         // Width / Height
-        'w-auto', 'w-fit', 'w-full',
+        'w-auto', 'w-fit', 'w-full','max-w-4xl', 'max-w-5xl', 'mx-auto',
 
         'w-8', 'w-12', 'w-16', 'w-20', 'w-24', 'w-28',
         'w-32', 'w-36', 'w-40', 'w-48', 'w-56',
@@ -72,13 +73,14 @@ export default {
         'pb-24', 'pb-32',
         // Sticky header + overflow
         'h-[70vh]', 'min-w-[60px]', 'min-w-[80px]', 'min-w-[100px]', 'min-w-[120px]', 'min-w-[200px]',
+        'max-h-[600px]',
         'table-fixed', 'border-separate',
         'sticky', 'top-0', 'z-10', 'shadow-sm', 'shadow-md',
         'overflow-x-auto', 'overflow-y-auto',
         // Текстовые утилиты для обрезки
         'truncate', 'whitespace-nowrap', 'overflow-hidden',
         // Выравнивание текста
-        'text-left', 'text-center', 'text-right'
+        'text-left', 'text-center', 'text-right','flex-grow', 'basis-1/4',
     ],
 
 
