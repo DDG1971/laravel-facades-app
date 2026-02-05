@@ -67,7 +67,7 @@
             </tr>
             </thead>
             <tbody>
-            @foreach($order->items as $item)
+          @foreach($order->items as $item)
                 @php
                     $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
                     $millingBase = $order->milling?->getBasePriceFor('retail') ?? 0;
@@ -78,7 +78,7 @@
                         + ($order->coatingType?->price ?? 0);
                     $finalPrice = $item->calculatePrice('retail');
                 @endphp
-                <tr>
+         <tr>
                     <td class="border px-2 py-1 truncate">{{ $item->facadeType->name_ru ?? '—' }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->height }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->width }}</td>
@@ -88,7 +88,14 @@
                     </td>
                     <td class="border px-2 py-1 truncate">{{ $item->drilling->name_ru ?? '—' }}</td>
                     <td class="border px-2 py-1 text-center">
-                        {{ $item->double_sided_coating ? 'Да' : '—' }}
+                        @switch($item->coating_mode)
+                            @case(1)
+                                Да
+                                @break
+                            @case(2)
+                                Частич
+                                @break
+                            @default — @endswitch
                     </td>
                     <td class="border px-2 py-1 text-center">
                         {{ number_format($area, 2, ',', ' ') }}

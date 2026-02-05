@@ -94,7 +94,13 @@
                     <td>{{ $item->height }}</td>
                     <td>{{ $item->width }}</td>
                     <td>{{ $item->quantity }}</td>
-                    <td>{{ $item->double_sided_coating ? 'Да' : '—' }}</td>
+                    <td>
+                        @switch($item->coating_mode)
+                            @case(1) Да @break
+                            @case(2) Частич @break
+                            @default —
+                        @endswitch
+                    </td>
                     <td>{{ $item->thickness->label ?? $item->thickness->value ?? '—' }}</td>
                     <td>{{ $item->drilling->name_ru ?? '—' }}</td>
                     <td>

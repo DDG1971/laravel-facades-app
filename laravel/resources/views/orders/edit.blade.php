@@ -193,9 +193,11 @@
                         <td class="border"><input type="number" name="items[{{ $index }}][width]" value="{{ old("items.$index.width", $item->width) }}"  class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate"></td>
                         <td class="border"><input type="number" name="items[{{ $index }}][quantity]" value="{{ old("items.$index.quantity", $item->quantity) }}"  class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate"></td>
                         <td class="border">
-                            <select name="items[{{ $index }}][double_sided_coating]"  class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
-                                <option value="0" {{ old("items.$index.double_sided_coating", $item->double_sided_coating) == 0 ? 'selected' : '' }}>—</option>
-                                <option value="1" {{ old("items.$index.double_sided_coating", $item->double_sided_coating) == 1 ? 'selected' : '' }}>Да</option>
+                            <select name="items[{{ $index }}][coating_mode]"
+                                    class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
+                                <option value="0" {{ old("items.$index.coating_mode", $item->coating_mode) == 0 ? 'selected' : '' }}>—</option>
+                                <option value="1" {{ old("items.$index.coating_mode", $item->coating_mode) == 1 ? 'selected' : '' }}>Да</option>
+                                <option value="2" {{ old("items.$index.coating_mode", $item->coating_mode) == 2 ? 'selected' : '' }}>Частич</option>
                             </select>
                         </td>
                         <td class="border">
@@ -253,9 +255,10 @@
                     <td class="border"><input type="number" name="items[__INDEX__][width]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled></td>
                     <td class="border"><input type="number" name="items[__INDEX__][quantity]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled></td>
                     <td class="border">
-                        <select name="items[__INDEX__][double_sided_coating]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
+                        <select name="items[__INDEX__][coating_mode]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
                             <option value="0">—</option>
                             <option value="1">Да</option>
+                            <option value="2">Частич</option>
                         </select>
                     </td>
                     <td class="border">

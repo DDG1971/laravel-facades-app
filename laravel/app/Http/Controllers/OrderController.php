@@ -56,15 +56,6 @@ class OrderController extends Controller
         $drillings = Drilling::all();
         $millings = Milling::all();
         $thicknesses = Thickness::ordered()->get();
-       /* $thicknesses = Thickness::orderByRaw("
-         CASE value
-          WHEN 19 THEN 1
-          WHEN 22 THEN 2
-          WHEN 16 THEN 3
-          WHEN 38 THEN 4
-          ELSE 5
-           END
-        ")->orderBy('value')->get();*/
 
         return view('orders.create', compact(
             'customers',
@@ -93,7 +84,8 @@ class OrderController extends Controller
         return view('client.create', compact(
             'customer',
             'facadeTypes',
-            'colors', 'colorCatalogs',
+            'colors',
+            'colorCatalogs',
             'coatingTypes',
             'drillings',
             'millings',
@@ -110,7 +102,6 @@ class OrderController extends Controller
     {
         // Валидация
         $rules = [
-            //'customer_id' => 'required|exists:customers,id',
             'client_order_number' => 'nullable|string|max:50',
             'date_received' => 'nullable|date',
             'material' => 'required|string',
@@ -132,6 +123,7 @@ class OrderController extends Controller
             'items.*.width' => 'nullable|integer|min:1',
             'items.*.quantity' => 'nullable|integer|min:1',
             'items.*.thickness_id' => 'required|exists:thicknesses,id',
+            'items.*.coating_mode' => 'nullable|integer|in:0,1,2',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
             'items.*.notes' => 'nullable|string',
@@ -224,7 +216,7 @@ class OrderController extends Controller
                 'width' => $item['width'],
                 'square_meters' => $item['square_meters'] ?? null,
                 'quantity' => $item['quantity'],
-                'double_sided_coating' => $item['double_sided_coating'] ?? false,
+                'coating_mode' => $item['coating_mode'] ?? 0,
                 'drilling_id' => $item['drilling_id'] ?? null,
                 'notes' => $item['notes'] ?? null,
                 'unit_price' => $item['unit_price'] ?? 0,
@@ -345,6 +337,7 @@ class OrderController extends Controller
             'items.*.width' => 'required|integer|min:1',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.thickness_id' => 'required|exists:thicknesses,id',
+            'items.*.coating_mode' => 'nullable|integer|in:0,1,2',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
             'items.*.notes' => 'nullable|string',
@@ -398,7 +391,7 @@ class OrderController extends Controller
                         'width' => $itemData['width'],
                         'square_meters' => $itemData['square_meters'] ?? null,
                         'quantity' => $itemData['quantity'],
-                        'double_sided_coating' => $itemData['double_sided_coating'] ?? false,
+                        'coating_mode' => $itemData['coating_mode'] ?? 0,
                         'drilling_id' => $itemData['drilling_id'] ?? null,
                         'notes' => $itemData['notes'] ?? null,
                         'unit_price' => $itemData['unit_price'] ?? 0,
@@ -415,7 +408,7 @@ class OrderController extends Controller
                     'width' => $itemData['width'],
                     'square_meters' => $itemData['square_meters'] ?? null,
                     'quantity' => $itemData['quantity'],
-                    'double_sided_coating' => $itemData['double_sided_coating'] ?? false,
+                    'coating_mode' => $itemData['coating_mode'] ?? 0,
                     'drilling_id' => $itemData['drilling_id'] ?? null,
                     'notes' => $itemData['notes'] ?? null,
                     'unit_price' => $itemData['unit_price'] ?? 0,
@@ -567,13 +560,13 @@ class OrderController extends Controller
         if (!in_array($priceGroup, $allowed, true)) {
             $priceGroup = 'retail';
         }
-        // 🔹 подключаем наш клиентский шаблон
-        $pdf = Pdf::loadView('orders.pdf.calculation-client', [
-            'order' => $order,
-            'priceGroup' => $priceGroup,
-        ]);
-
-        return $pdf->download("order-{$order->queue_number}-calculation.pdf");
+        //  генерируем PDF
+         $pdf = Pdf::loadView('orders.pdf.calculation-client', [
+             'order' => $order,
+             'priceGroup' => $priceGroup,
+             ]);
+        // 🔹 отдаем поток в браузер
+         return $pdf->stream("order-{$order->queue_number}-calculation.pdf");
     }
 
     public function sendCalculation(Order $order, Request $request)

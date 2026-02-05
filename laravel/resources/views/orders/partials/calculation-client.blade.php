@@ -48,7 +48,18 @@
                 <td class="border px-2 py-1 text-center">{{ $item->quantity }}</td>
                 <td class="border px-2 py-1 text-center">{{ number_format($area, 2, ',', ' ') }}</td>
                 <td class="border px-2 py-1 text-center">{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->isDoubleSided() ? 'Да' : 'Нет' }}</td>
+                <td class="border px-2 py-1 text-center">
+                    @switch($item->coating_mode)
+                        @case(1)
+                            Двухсторонний
+                            @break
+                        @case(2)
+                            Частичная
+                            @break
+                        @default
+                            —
+                    @endswitch
+                </td>
                 <td class="border px-2 py-1 text-right">{{ number_format($rate, 2, ',', ' ') }}</td>
                 <td class="border px-2 py-1 text-right">{{ number_format($price, 2, ',', ' ') }}</td>
             </tr>

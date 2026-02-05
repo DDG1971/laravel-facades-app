@@ -57,10 +57,11 @@
                        class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
             </td>
             <td class="border px-0.5 py-0">
-                <select name="items[__INDEX__][double_sided_coating]"
+                <select name="items[__INDEX__][coating_mode]"
                         class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
                     <option value="0">—</option>
                     <option value="1">Да</option>
+                    <option value="2">Частич</option>
                 </select>
             </td>
 
@@ -137,10 +138,11 @@
                        class="w-full min-w-0 border border-gray-400 px-0.5 py-0 text-center text-sm">
             </td>
             <td class="border px-0.5 py-0">
-                <select name="items[0][double_sided_coating]"
+                <select name="items[0][coating_mode]"
                         class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
                     <option value="0">—</option>
                     <option value="1">Да</option>
+                    <option value="2">Частич</option>
                 </select>
             </td>
 

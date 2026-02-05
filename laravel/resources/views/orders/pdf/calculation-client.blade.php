@@ -62,7 +62,18 @@
             <td>{{ $item->quantity }}</td>
             <td>{{ number_format($area, 2, ',', ' ') }}</td>
             <td>{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
-            <td>{{ $item->isDoubleSided() ? 'Да' : 'Нет' }}</td>
+            <td>
+                @switch($item->coating_mode)
+                    @case(1)
+                        Да
+                        @break
+                    @case(2)
+                        Частич
+                        @break
+                    @default
+                        —
+                @endswitch
+            </td>
             <td>{{ number_format($rate, 2, ',', ' ') }}</td>
             <td>{{ number_format($price, 2, ',', ' ') }}</td>
         </tr>

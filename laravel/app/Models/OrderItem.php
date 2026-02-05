@@ -23,7 +23,7 @@ class OrderItem extends Model
      'unit_price',
      'item_total',
      'date_created',
-     'double_sided_coating',
+     'coating_mode',
      'drilling_id',
      ];
  protected $casts = [
@@ -33,6 +33,15 @@ class OrderItem extends Model
 public function order()
 {
     return $this->belongsTo(Order::class);
+}
+// поменял в миграции bool на tinyInteger(методы возвращают bool, потому что они проверяют конкретное состояние)
+public function isDoubleSided(): bool
+{
+    return $this->coating_mode === 1;
+}
+public function isPartialCoating(): bool
+{
+    return $this->coating_mode === 2;
 }
 // Связь с типом фасада
 public function facadeType()
@@ -58,11 +67,7 @@ public function thickness()
  {
      return $this->belongsTo(Drilling::class);
  }
- // Флаг двустороннего покрытия
-public function isDoubleSided(): bool
-{
-    return (bool) $this->double_sided_coating;
-}
+
 // Логика добавки +4 мм
  public function needsSawAddition(): bool
  {
@@ -118,8 +123,10 @@ return true;
              }
              $doubleSidedCost = $area * ($basePaint + $coatingExtra);
          }
-         // итоговая цена = цена за м² * площадь + доп. окрас
+        // 7. частичная окраска (+5 к базовой цене за м²)
+         if ($this->isPartialCoating()) { $pricePerUnit += 5; }
 
+         // итоговая цена = цена за м² * площадь + доп. окрас
          return ($pricePerUnit * $area) + $doubleSidedCost;
     }
 }
