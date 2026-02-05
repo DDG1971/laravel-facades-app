@@ -27,7 +27,7 @@
                         tabindex="-1"
                     >
                 </div>
-                <div class="p-2">
+               {{-- <div class="p-2">
                     <label for="customer_id" class="block text-xs font-medium text-gray-700">Клиент</label>
                     <select id="customer_id" name="customer_id"
                             class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
@@ -38,6 +38,12 @@
                             </option>
                         @endforeach
                     </select>
+                </div>--}}
+                <div class="p-2">
+                    <label class="block text-xs font-medium text-gray-700">Компания</label>
+                    <input type="text" class="w-64 border rounded-md px-2 py-1 text-sm bg-gray-100"
+                           value="{{ $order->customer->company_name }}" readonly>
+                    <input type="hidden" name="customer_id" value="{{ $order->customer_id }}">
                 </div>
                 <div class="p-2">
                     <label for="client_order_number" class="block text-xs font-medium text-gray-700">№ заказа

@@ -38,20 +38,34 @@ services:
       - app
     networks:
       - laravel-network
-  mailhog:
-    image: mailhog/mailhog
+  maildev:
+    image: maildev/maildev
     restart: unless-stopped
 
     ports:
-      - "1080:1080"
-      - "1025:1025"
+      - "2080:1080"
+      - "2025:1025"
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
     networks:
       - laravel-network
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan queue:work
+    volumes:
+      - ../laravel:/var/www/html
+    depends_on:
+      - app
+      - db
+    networks:
+      - laravel-network
 
+networks:
+  laravel-network:
 
 
 volumes:

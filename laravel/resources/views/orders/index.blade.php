@@ -73,18 +73,19 @@
                     <tbody>
                     @forelse($orders as $order)
                         <tr class="
-        hover:bg-gray-50
-        @switch($order->status->name)
-            @case('new') bg-blue-100 text-blue-800 @break
-            @case('received') bg-yellow-100 text-yellow-800 @break
-            @case('in_progress') bg-indigo-100 text-indigo-800 @break
-            @case('paint_shop') bg-purple-100 text-purple-800 @break
-            @case('ready') bg-green-100 text-green-800 @break
-            @case('shipped') bg-teal-100 text-teal-800 @break
-            @case('completed') bg-gray-200 text-gray-800 @break
-            @case('cancelled') bg-red-100 text-red-800 @break
-        @endswitch
-    ">
+    transition-colors duration-300
+    hover:bg-gray-50
+    @switch($order->status->name)
+        @case('new') bg-blue-100 text-blue-800 @break
+        @case('received') bg-yellow-100 text-yellow-800 @break
+        @case('in_progress') bg-indigo-300 text-indigo-900 @break
+        @case('paint_shop') bg-purple-100 text-purple-800 @break
+        @case('ready') bg-green-100 text-green-800 @break
+        @case('shipped') bg-teal-100 text-teal-800 @break
+        @case('completed') bg-gray-200 text-gray-800 @break
+        @case('cancelled') bg-red-100 text-red-800 @break
+    @endswitch
+">
                                 <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
                             <td class="border px-2 py-1 truncate overflow-hidden whitespace-nowrap">
                                 {{ $order->customer->company_name ?? 'нет данных' }}

@@ -30,7 +30,8 @@ Route::middleware(['auth'])->get('/dashboard', function () {
         $user->hasRole('admin') => redirect()->route('admin.dashboard'),
         $user->hasRole('customer') => redirect()->route('client.dashboard'),
         $user->hasRole('manager') => redirect()->route('manager.dashboard'),
-        default => redirect()->route('client.dashboard'),
+        $user->hasRole('pending') => view('dashboard'),
+         default => redirect('/'),
     };
    })->name('dashboard');
 
@@ -82,7 +83,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/orders/{order}/send-calculation', [OrderController::class, 'sendCalculation']) ->name('orders.send.calculation');
 
 });
-
+//Route::get('/test-queue', [OrderController::class, 'testQueue']);
 
 // Клиентский дашборд
 Route::middleware(['auth', 'role:customer'])->group(function () {
@@ -92,10 +93,5 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/orders', [OrderController::class, 'indexClient'])->name('orders.index');
 
 });
-
-Route::get('/test', function () {
-    return view('test');
-});
-
 
 require __DIR__.'/auth.php';

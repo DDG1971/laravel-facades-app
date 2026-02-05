@@ -17,6 +17,8 @@
         use Queueable, SerializesModels;
         public $order;
         public $priceGroup;
+        //  private $orderId;
+
         /**
          * Create a new message instance.
          */
@@ -25,22 +27,32 @@
             $this->order = $order;
             $this->priceGroup = $priceGroup;
         }
+
         public function build()
         {
+            $recipient = $this->order->user?->email ?? 'test@example.com';
+
             $pdf = Pdf::loadView('orders.pdf.calculation-client', [
                 'order' => $this->order,
                 'priceGroup' => $this->priceGroup,
+            ]);
 
-                ]);
-
-            return $this->subject("Расчёт заказа №{$this->order->id}")
-                ->view('emails.calculation') // простой текст письма
-                ->attachData($pdf->output(), "order-{$this->order->id}-calculation.pdf");
+            return $this->from(config('mail.from.address'), config('mail.from.name'))
+                ->to($recipient)
+                ->subject("Расчёт заказа №{$this->order->queue_number}")
+                ->view('emails.calculation-text')
+                ->with([
+                    'order' => $this->order,
+                    ])
+                ->attachData(
+                    $pdf->output(),
+                    "order-{$this->order->queue_number}-calculation.pdf"
+                );
         }
         /**
          * Get the message envelope.
          */
-        public function envelope(): Envelope
+        /*public function envelope(): Envelope
         {
             return new Envelope(
                 subject: 'Calculation Mail',
@@ -50,7 +62,7 @@
         /**
          * Get the message content definition.
          */
-        public function content(): Content
+       /* public function content(): Content
         {
             return new Content(
                 view: 'view.name',
@@ -62,8 +74,8 @@
          *
          * @return array<int, \Illuminate\Mail\Mailables\Attachment>
          */
-        public function attachments(): array
+       /* public function attachments(): array
         {
             return [];
-        }
+        }*/
     }

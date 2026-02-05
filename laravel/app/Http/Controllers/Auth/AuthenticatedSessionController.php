@@ -39,8 +39,8 @@ class AuthenticatedSessionController extends Controller
             'admin' => route('admin.dashboard'),
             'manager' => route('manager.dashboard'),
             'customer' => route('client.dashboard'),
-            'pending' => route('dashboard'),
-            default => route('dashboard'),
+            'pending' => route('pending.dashboard'),
+             default => '/',
         };
     }
 

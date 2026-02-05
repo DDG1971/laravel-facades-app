@@ -28,6 +28,13 @@
             readonly
         >
     </div>
+    <!-- Материал -->
+    <div class="p-2">
+        <label class="block text-xs font-medium text-gray-700">Материал</label>
+        <select class="w-48 border rounded-md px-2 py-1 bg-gray-100 text-sm" disabled>
+            <option>{{ $order->material }}</option>
+        </select>
+    </div>
 
     <!-- Каталог цветов -->
     <div class="p-2">
@@ -53,13 +60,7 @@
         </select>
     </div>
 
-    <!-- Материал -->
-    <div class="p-2">
-        <label class="block text-xs font-medium text-gray-700">Материал</label>
-        <select class="w-48 border rounded-md px-2 py-1 bg-gray-100 text-sm" disabled>
-            <option>{{ $order->material }}</option>
-        </select>
-    </div>
+
 
     <!-- Фрезеровка -->
     <div class="p-2">

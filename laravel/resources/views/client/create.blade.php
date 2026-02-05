@@ -35,6 +35,26 @@
                            class="w-64 border rounded-md px-2 py-1 text-sm"
                            value="{{ old('client_order_number', 'б/н') }}">
                 </div>
+                <!-- Материал -->
+                <div class="p-2">
+                    <label for="material" class="block text-xs font-medium text-gray-700">Материал</label>
+                    <select id="material" name="material"
+                            class="w-48 border rounded-md px-2 py-1 bg-white text-sm">
+                        <option value="MDF">MDF</option>
+                        <option value="Shpon">Шпон</option>
+                    </select>
+                </div>
+                <!-- Файл вложения -->
+                <div class="p-2 no-print">
+                    <label for="order_attachment" class="block text-xs font-medium text-gray-700">Файл вложения</label>
+                    <input type="file" name="order_attachment" id="order_attachment" class="hidden"
+                           onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'Файл не выбран';"/>
+                    <button type="button" onclick="document.getElementById('order_attachment').click()"
+                            class="px-2 py-1 border rounded-md bg-gray-100 hover:bg-gray-200 text-sm">
+                        Выберите файл
+                    </button>
+                    <span id="file-name" class="ml-2 text-xs text-gray-500">Файл не выбран</span>
+                </div>
 
                 <!-- Каталог цветов -->
                 <div class="p-2">
@@ -71,28 +91,9 @@
                         @endforeach
                     </select>
                 </div>
-
-                <!-- Файл вложения -->
-                <div class="p-2 no-print">
-                    <label for="order_attachment" class="block text-xs font-medium text-gray-700">Файл вложения</label>
-                    <input type="file" name="order_attachment" id="order_attachment" class="hidden"
-                           onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'Файл не выбран';"/>
-                    <button type="button" onclick="document.getElementById('order_attachment').click()"
-                            class="px-2 py-1 border rounded-md bg-gray-100 hover:bg-gray-200 text-sm">
-                        Выберите файл
-                    </button>
-                    <span id="file-name" class="ml-2 text-xs text-gray-500">Файл не выбран</span>
-                </div>
-
-                <!-- Материал -->
-                <div class="p-2">
-                    <label for="material" class="block text-xs font-medium text-gray-700">Материал</label>
-                    <select id="material" name="material"
-                            class="w-48 border rounded-md px-2 py-1 bg-white text-sm">
-                        <option value="MDF">MDF</option>
-                        <option value="Shpon">Шпон</option>
-                    </select>
-                </div>
+                <div></div>
+                <div></div>
+                <div></div>
 
                 <!-- Фрезеровка -->
                 <div class="p-2">

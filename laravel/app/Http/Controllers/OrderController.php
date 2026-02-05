@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\CalculationMail;
 use App\Models\Milling;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -21,7 +20,8 @@ use App\Models\Drilling;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-
+use App\Mail\CalculationMail;
+use Illuminate\Support\Facades\Storage;
 
 
 class OrderController extends Controller
@@ -55,7 +55,8 @@ class OrderController extends Controller
         $coatingTypes = CoatingType::all();
         $drillings = Drilling::all();
         $millings = Milling::all();
-        $thicknesses = Thickness::orderByRaw("
+        $thicknesses = Thickness::ordered()->get();
+       /* $thicknesses = Thickness::orderByRaw("
          CASE value
           WHEN 19 THEN 1
           WHEN 22 THEN 2
@@ -63,7 +64,7 @@ class OrderController extends Controller
           WHEN 38 THEN 4
           ELSE 5
            END
-        ")->orderBy('value')->get();
+        ")->orderBy('value')->get();*/
 
         return view('orders.create', compact(
             'customers',
@@ -87,7 +88,7 @@ class OrderController extends Controller
         $coatingTypes = CoatingType::all();
         $drillings = Drilling::all();
         $millings = Milling::all();
-        $thicknesses = Thickness::orderBy('value')->get();
+        $thicknesses = Thickness::ordered()->get();
 
         return view('client.create', compact(
             'customer',
@@ -196,21 +197,24 @@ class OrderController extends Controller
 
         // Вложение для заказа
         if ($request->hasFile('order_attachment')) {
-            $path = $request->file('order_attachment')->store('orders/attachments', 'public');
+            $file = $request->file('order_attachment');
+            $path = $file->store('orders/attachments', 'public');
+            //dd($path);
             $order->attachment_path = $path;
             $order->save();
         }
-
         // Позиции
-        foreach ($request->input('items', []) as $item) {
+        foreach ($request->input('items', []) as $index => $item) {
             if (empty($item['height']) && empty($item['width']) && empty($item['quantity'])) {
                 continue;
             }
-
             $attachmentPath = null;
-            if (!empty($item['attachment']) && $item['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-                $attachmentPath = $item['attachment']->store('order_items/attachments', 'public');
-            }
+            //  Проверяю файл по индексу
+             if ($request->hasFile("items.$index.attachment")) {
+                 $file = $request->file("items.$index.attachment");
+                 $attachmentPath = $file->store('order_items/attachments', 'public');
+             }
+
 
             OrderItem::create([
                 'order_id' => $order->id,
@@ -542,6 +546,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $order->status_id = $request->input('status_id');
+        $order->date_status = now();
         $order->save();
 
         return redirect()->route('orders.manage', $order->id)
@@ -576,6 +581,7 @@ class OrderController extends Controller
         // $recipient = $order->customer?->email ?? 'test@example.com'; Mail::raw('Во вложении расчёт заказа', function ($message) use ($order, $pdf, $recipient) { $message->to($recipient) ->subject("Расчёт заказа №{$order->id}") ->attachData($pdf->output(), "order-{$order->id}-calculation.pdf"); }); return back()->with('success', "Расчёт отправлен на {$recipient}!");
         //Mail::raw('Тестовое письмо', function ($message) { $message->to('test@example.com') ->subject('MailHog test'); });
         $order->load([
+            'user',
             'customer',
             'colorCatalog',
             'colorCode',
@@ -591,29 +597,19 @@ class OrderController extends Controller
             $priceGroup = 'retail';
         }
 
-        $recipient = $order->customer?->users()->first()?->email;
+        $recipient = $order->user?->email;
 
         if (empty($recipient)) {
-
             return back()->with('error', 'У клиента не найден ни один пользователь с email.');
         }
+        ///Mail::send(new CalculationMail($order, $priceGroup));
+      // Mail::to($recipient)->send(new CalculationMail($order, $priceGroup));
+        Mail::to($recipient)->queue(new CalculationMail($order, $priceGroup));
 
-        $pdf = Pdf::loadView('orders.pdf.calculation-client', [
-            'order' => $order,
-            'priceGroup' => $priceGroup,
-            //'customers' => Customer::all(), 'colorCatalogs' => ColorCatalog::all(), 'colors' => ColorCode::all(), 'coatingTypes' => CoatingType::all(), 'millings' => Milling::all(), 'orderDate' => $order->created_at, 'clientNumber' => $order->client_number, 'material' => $order->material,
-        ]);
 
-        Mail::raw('Во вложении расчёт заказа', function ($message) use ($order, $pdf, $recipient) {
-            $message->to($recipient)
-                ->subject("Расчёт заказа №{$order->queue_number}")
-                ->attachData(
-                    $pdf->output(),
-                    "order-{$order->queue_number}-calculation.pdf");
-        });
-
-        return back()->with('success', 'Расчёт отправлен клиенту напрямую!');
+        return back()->with('success', "Расчёт отправлен на {$recipient}!");
 
     }
+    //public function testQueue() { dispatch(function () { Log::info('Очередь работает!'); }); return 'Задача поставлена в очередь'; }
 
 }

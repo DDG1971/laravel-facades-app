@@ -7,9 +7,9 @@
         <!-- 🔹 Шапка заказа -->
     <div style="font-size: 14px; margin-bottom: 20px;">
         <h2>Расчёт заказа №{{ $order->queue_number }}</h2>
-        <p><strong>Дата заказа:</strong> {{ $orderDate instanceof \Carbon\Carbon ? $orderDate->format('d.m.Y') : $orderDate }}</p>
-        <p><strong>№ заказа клиента:</strong> {{ $clientNumber ?? '—' }}</p>
-        <p><strong>Материал:</strong> {{ is_object($material) ? $material->label : $material }}</p>
+        <p><strong>Дата заказа:</strong> {{ $order->created_at->format('d.m.Y') }}</p>
+        <p><strong>№ заказа клиента:</strong> {{ $order->client_number ?? '—' }}</p>
+        <p><strong>Материал:</strong> {{ $order->material?->label ?? '—' }}</p>
         <p><strong>Цвет:</strong> {{ $order->color?->name_ru ?? '—' }}</p>
         <p><strong>Покрытие:</strong> {{ $order->coatingType?->label ?? '—' }}</p>
     </div>
@@ -71,6 +71,4 @@
         </tfoot>
     </table>
 </div>
-
-
 
