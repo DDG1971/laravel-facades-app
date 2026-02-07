@@ -42,10 +42,10 @@
         </form>
 
         <!-- 🔹 Управление статусом -->
-        <div class="bg-white shadow rounded p-4">
+        {{--<div class="bg-white shadow rounded p-4">
             <h3 class="font-bold mb-2">Статус заказа</h3>
             @include('orders.partials.status-form', ['order' => $order, 'statuses' => $statuses])
-        </div>
+        </div>--}}
     </div>
 </x-app-layout>
 

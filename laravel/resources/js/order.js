@@ -54,7 +54,7 @@ function addRowIfValid(currentRow) {
     tableBody.appendChild(newRow);
     rowIndex++;
 
-    newRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    newRow.scrollIntoView({behavior: 'smooth', block: 'end'});
     const firstControl = newRow.querySelector('input:not([type="file"]), select');
     if (firstControl) firstControl.focus();
 
@@ -86,7 +86,7 @@ document.addEventListener('click', function (e) {
 });
 
 // Изменение кнопки при выборе файла
-document.addEventListener('change', function(e) {
+document.addEventListener('change', function (e) {
     if (e.target.type === 'file' && e.target.name.includes('[attachment]')) {
         const label = e.target.closest('label');
         const svgIcon = label.querySelector('svg');
@@ -104,7 +104,7 @@ document.addEventListener('change', function(e) {
 });
 
 // Навигация клавишами
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     const visibleInputs = Array.from(document.querySelectorAll('#order-items-table input:not([type="file"]), #order-items-table select'));
     const index = visibleInputs.indexOf(document.activeElement);
 
@@ -162,18 +162,60 @@ function recalcTotals() {
 
     document.querySelectorAll('#order-items-body tr:not(#item-row-template)').forEach(row => {
         const qty = parseFloat(row.querySelector('[name*="[quantity]"]')?.value) || 0;
-        const h   = parseFloat(row.querySelector('[name*="[height]"]')?.value) || 0;
-        const w   = parseFloat(row.querySelector('[name*="[width]"]')?.value) || 0;
+        const h = parseFloat(row.querySelector('[name*="[height]"]')?.value) || 0;
+        const w = parseFloat(row.querySelector('[name*="[width]"]')?.value) || 0;
 
         totalQty += qty;
         totalSquare += (h * w / 1_000_000) * qty;
     });
 
     document.getElementById('total-quantity').textContent = totalQty;
-    document.getElementById('total-square').textContent   = totalSquare.toFixed(2);
+    document.getElementById('total-square').textContent = totalSquare.toFixed(2);
 }
 
 document.addEventListener('input', recalcTotals);
 
+// 🔹 Обновление статуса заказа (AJAX)
+const statusClasses = {
+    new: ['bg-blue-100', 'text-blue-800'],
+    received: ['bg-yellow-100', 'text-yellow-800'],
+    in_progress: ['bg-indigo-300', 'text-indigo-900'],
+    paint_shop: ['bg-purple-100', 'text-purple-800'],
+    ready: ['bg-green-100', 'text-green-800'],
+    shipped: ['bg-teal-100', 'text-teal-800'],
+    completed: ['bg-gray-200', 'text-gray-800'],
+    cancelled: ['bg-red-100', 'text-red-800']
+};
+
+window.updateStatus = function (orderId, statusId) {
+    console.log('updateStatus вызван', orderId, statusId);
+    fetch(`/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({status_id: statusId})
+    })
+        .then(r => r.json())
+        .then(data => {
+            console.log('ответ сервера', data);
+
+            if (data.success) {
+                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                console.log('row найден?', row);
+
+                if (row) {
+                    Object.values(statusClasses).flat().forEach(cls => row.classList.remove(cls));
+                    statusClasses[data.status_key].forEach(cls => row.classList.add(cls));
+                }
+                const dateCell = document.querySelector(`#date-status-${orderId}`);
+                if (dateCell) {
+                    dateCell.textContent = data.date_status;
+                }
+            }
+        })
+        .catch(error => console.error('Ошибка обновления статуса:', error));
+}
 
 

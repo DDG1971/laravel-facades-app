@@ -39,7 +39,9 @@ class OrderController extends Controller
             'coatingType',
             'milling'
         ])->get();
-        return view('orders.index', compact('orders'));
+        $statuses = Status::all();
+
+        return view('orders.index', compact('orders','statuses'));
     }
 
     /**
@@ -542,9 +544,18 @@ class OrderController extends Controller
         $order->date_status = now();
         $order->save();
 
-        return redirect()->route('orders.manage', $order->id)
-            ->with('success', 'Статус заказа обновлён.');
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'status' => $order->status->label, // русский текст
+                'status_key' => $order->status->name, //  технический ключ
+                'date_status' => $order->date_status->format('d.m.Y'),
+            ]);
+        }
+        return redirect()->back()->with('success', 'Статус заказа обновлён.');
+
     }
+
 
     public function sendToClient(Order $order, Request $request)
     {
@@ -560,13 +571,15 @@ class OrderController extends Controller
         if (!in_array($priceGroup, $allowed, true)) {
             $priceGroup = 'retail';
         }
-        //  генерируем PDF
-         $pdf = Pdf::loadView('orders.pdf.calculation-client', [
-             'order' => $order,
-             'priceGroup' => $priceGroup,
-             ]);
-        // 🔹 отдаем поток в браузер
-         return $pdf->stream("order-{$order->queue_number}-calculation.pdf");
+        //  генериру PDF
+        $pdf = Pdf::loadView('orders.pdf.calculation-client', [
+            'order' => $order,
+            'priceGroup' => $priceGroup,
+            ]);
+        $path = storage_path("app/public/order-{$order->queue_number}-calculation.pdf");
+        $pdf->save($path);
+
+        return response()->download($path)->deleteFileAfterSend();
     }
 
     public function sendCalculation(Order $order, Request $request)
@@ -603,6 +616,5 @@ class OrderController extends Controller
         return back()->with('success', "Расчёт отправлен на {$recipient}!");
 
     }
-    //public function testQueue() { dispatch(function () { Log::info('Очередь работает!'); }); return 'Задача поставлена в очередь'; }
 
 }
