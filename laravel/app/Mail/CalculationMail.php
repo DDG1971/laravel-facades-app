@@ -15,38 +15,38 @@
     class CalculationMail extends Mailable implements ShouldQueue
     {
         use Queueable, SerializesModels;
+
         public $order;
         public $priceGroup;
-        //  private $orderId;
 
-        /**
-         * Create a new message instance.
-         */
         public function __construct(Order $order, string $priceGroup = 'retail')
         {
+            // Используем SerializesModels, он сам подгрузит свежий объект из базы по ID
             $this->order = $order;
             $this->priceGroup = $priceGroup;
         }
 
         public function build()
         {
-            $recipient = $this->order->user?->email ?? 'test@example.com';
+            // 1. Увеличиваем лимит памяти для DomPDF
+            ini_set('memory_limit', '512M');
 
+            // 2. Убеждаемся, что все связи подгружены (в очереди они могут пропасть)
+            $this->order->load(['customer', 'colorCatalog', 'colorCode', 'coatingType', 'milling', 'items.drilling', 'items.facadeType', 'items.thickness']);
+
+            // 3. Генерируем PDF
             $pdf = Pdf::loadView('orders.pdf.calculation-client', [
                 'order' => $this->order,
                 'priceGroup' => $this->priceGroup,
             ]);
 
             return $this->from(config('mail.from.address'), config('mail.from.name'))
-                ->to($recipient)
                 ->subject("Расчёт заказа №{$this->order->queue_number}")
                 ->view('emails.calculation-text')
-                ->with([
-                    'order' => $this->order,
-                    ])
                 ->attachData(
                     $pdf->output(),
-                    "order-{$this->order->queue_number}-calculation.pdf"
+                    "order-{$this->order->queue_number}-calculation.pdf",
+                    ['mime' => 'application/pdf']
                 );
         }
         /**

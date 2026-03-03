@@ -68,8 +68,23 @@
             <td class="border px-0.5 py-0">
                 <select name="items[__INDEX__][thickness_id]"
                         class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
-                    @foreach($thicknesses as $thickness)
-                        <option value="{{ $thickness->id }}">{{ $thickness->label ?? $thickness->value }}</option>
+
+                    {{-- 1. Сначала 19мм --}}
+                    @foreach($thicknesses->where('value', 19) as $thickness)
+                        <option value="{{ $thickness->id }}"
+                            {{ $thickness->value == 19 ? 'selected' : '' }}>
+                            {{ $thickness->label ?? $thickness->value }}
+                        </option>
+                    @endforeach
+
+                    {{-- 2. Потом прочерк --}}
+                    <option value="">—</option>
+
+                    {{-- 3. Все остальные --}}
+                    @foreach($thicknesses->where('value', '!=', 19) as $thickness)
+                        <option value="{{ $thickness->id }}">
+                            {{ $thickness->label ?? $thickness->value }}
+                        </option>
                     @endforeach
                 </select>
             </td>
@@ -147,12 +162,13 @@
             </td>
 
             <td class="border px-0.5 py-0">
-                <select name="items[0][thickness_id]"
-                        class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
-                    @foreach($thicknesses as $thickness)
-                        <option value="{{ $thickness->id }}" {{ $thickness->value == 19 ? 'selected' : '' }}>
-                            {{ $thickness->label ?? $thickness->value }}
-                        </option>
+                <select name="items[0][thickness_id]" class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm">
+                    @foreach($thicknesses->where('value', 19) as $t)
+                        <option value="{{ $t->id }}" selected>{{ $t->label ?? $t->value }}</option>
+                    @endforeach
+                    <option value="">—</option>
+                    @foreach($thicknesses->where('value', '!=', 19) as $t)
+                        <option value="{{ $t->id }}">{{ $t->label ?? $t->value }}</option>
                     @endforeach
                 </select>
             </td>

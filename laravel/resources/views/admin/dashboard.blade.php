@@ -11,7 +11,6 @@
     <!--  конец header -->
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-       {{-- <h1 class="text-2xl font-bold mb-6">Admin Panel</h1> --}}
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div class="p-6 bg-white shadow rounded">
@@ -80,6 +79,12 @@
                 <h2 class="font-semibold">📏 Thicknesses</h2>
                 <p>Редактирование списка толщин.</p>
                 <a href="{{ route('thicknesses.index') }}" class="text-blue-600">📋 Список толщин</a>
+            </div>
+
+            <div class="p-6 bg-white shadow rounded">
+                <h2 class="font-semibold">钻 Drilling</h2>
+                <p>Редактирование типов сверловки, пазов под ДВП и натяжителей.</p>
+                <a href="{{ route('drillings.index') }}" class="text-blue-600">📋 Список сверловок</a>
             </div>
 
 

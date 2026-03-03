@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\CalculationMail;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\OrderReceivedMail;
+use Telegram\Bot\Laravel\Facades\Telegram;
 
 
 class OrderController extends Controller
@@ -29,19 +31,49 @@ class OrderController extends Controller
     /**
      * Список заказов (для клиента или менеджера).
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with([
-            'customer',
+        // запрос
+        $query = Order::query()->with([
+            'customer:id,company_name', // Берем только нужные поля
             'status',
             'colorCatalog',
             'colorCode',
             'coatingType',
             'milling'
-        ])->get();
-        $statuses = Status::all();
+        ]);
 
-        return view('orders.index', compact('orders','statuses'));
+        // Поиск по номеру заказа клиента (LIKE для частичного совпадения)
+        if ($request->filled('client_order_number')) {
+            $query->where('client_order_number', 'like', '%' . $request->client_order_number . '%');
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('color_code_id')) {
+            $query->where('color_code_id', $request->color_code_id);
+        }
+        // Поиск по фрезеровке
+        if ($request->filled('milling_id')) {
+            $query->where('milling_id', $request->milling_id);
+        }
+        // Исключаю заказы со статусом paint_shop
+        $query->whereHas('status', function ($q) {
+            $q->where('name', '!=', 'paint_shop');
+        });
+
+        // --- КОНЕЦ ФИЛЬТРОВ ---
+
+        $orders = $query->orderByDesc('queue_number')->paginate(50);
+
+        $customers = \App\Models\Customer::select('id', 'company_name')->orderBy('company_name')->get();
+        $colorCodes = \App\Models\ColorCode::select('id', 'code')->orderBy('code')->get();
+        $millings = \App\Models\Milling::orderBy('name')->get();
+        $statuses = \App\Models\Status::where('name', '!=', 'paint_shop')->get();
+
+        return view('orders.index', compact('orders', 'statuses', 'customers', 'millings', 'colorCodes'));
     }
 
     /**
@@ -124,7 +156,7 @@ class OrderController extends Controller
             'items.*.height' => 'nullable|integer|min:1',
             'items.*.width' => 'nullable|integer|min:1',
             'items.*.quantity' => 'nullable|integer|min:1',
-            'items.*.thickness_id' => 'required|exists:thicknesses,id',
+            'items.*.thickness_id' => 'nullable|exists:thicknesses,id',
             'items.*.coating_mode' => 'nullable|integer|in:0,1,2',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
@@ -141,40 +173,31 @@ class OrderController extends Controller
         }
         // 🔹 Валидация
         $request->validate($rules);
-        // 🔹 Определяем customer_id
-        $customerId = auth()->user()->role === 'customer'
-            ? auth()->user()->customer_id
-            : $request->input('customer_id');
-
-        // Статус по умолчанию
-        $defaultStatusId = optional(Status::firstWhere('name', 'new'))->id
-            ?? Status::min('id');
-
+        // 2. Подготовка данных перед транзакцией
+        $customerId = auth()->user()->role === 'customer' ? auth()->user()->customer_id : $request->input('customer_id');
+        $defaultStatusId = optional(Status::firstWhere('name', 'new'))->id ?? Status::min('id');
         $clientOrderNumber = trim($request->input('client_order_number') ?? '');
+        $clientOrderNumber = $clientOrderNumber === '' ? null : $clientOrderNumber;
         $today = now()->toDateString();
 
-        $clientOrderNumber = $clientOrderNumber === '' ? null : $clientOrderNumber;
-
-        // Проверка на дубликат
+        // Проверка на дубликат (до транзакции, чтобы не нагружать БД блокировками)
         $duplicateFound = false;
         if ($clientOrderNumber) {
             $duplicateFound = Order::where('customer_id', $customerId)
-                ->whereYear('date_received', Carbon::parse($today)->year)
+                ->whereYear('date_received', now()->year)
                 ->where('client_order_number', $clientOrderNumber)
                 ->exists();
         }
 
-        $order = DB::transaction(function () use (
-            $defaultStatusId,
-            $clientOrderNumber,
-            $today,
-            $customerId,
-            $request
-        ) {
-            $lastQueue = Order::lockForUpdate()->max('queue_number') ?? 0;
+        // 3. Основная транзакция
+        $order = DB::transaction(function () use ($request, $customerId, $defaultStatusId, $clientOrderNumber, $today) {
+
+            // Блокируем только получение последнего номера
+            $lastQueue = Order::orderBy('queue_number', 'desc')->lockForUpdate()->value('queue_number') ?? 0;
             $queueNumber = $lastQueue + 1;
 
-            return Order::create([
+            // Создаем сам заказ
+            $order = Order::create([
                 'customer_id' => $customerId,
                 'user_id' => Auth::id(),
                 'status_id' => $defaultStatusId,
@@ -186,70 +209,123 @@ class OrderController extends Controller
                 'color_code_id' => $request->input('color_code_id'),
                 'coating_type_id' => $request->input('coating_type_id'),
                 'milling_id' => $request->input('milling_id'),
-            ]);
-        });
 
-        // Вложение для заказа
-        if ($request->hasFile('order_attachment')) {
-            $file = $request->file('order_attachment');
-            $path = $file->store('orders/attachments', 'public');
-            //dd($path);
-            $order->attachment_path = $path;
-            $order->save();
-        }
-        // Позиции
-        foreach ($request->input('items', []) as $index => $item) {
-            if (empty($item['height']) && empty($item['width']) && empty($item['quantity'])) {
-                continue;
+            ]);
+
+
+            // Сохраняем вложение заказа (внутри транзакции)
+            if ($request->hasFile('order_attachment')) {
+                $order->update(['attachment_path' => $request->file('order_attachment')->store('orders/attachments', 'public')]);
             }
-            $attachmentPath = null;
-            //  Проверяю файл по индексу
-             if ($request->hasFile("items.$index.attachment")) {
-                 $file = $request->file("items.$index.attachment");
-                 $attachmentPath = $file->store('order_items/attachments', 'public');
-             }
 
+            $totalSquare = 0;
+            $totalPrice = 0;
 
-            OrderItem::create([
-                'order_id' => $order->id,
-                'facade_type_id' => $item['facade_type_id'] ?? null,
-                'thickness_id' => $item['thickness_id'],
-                'height' => $item['height'],
-                'width' => $item['width'],
-                'square_meters' => $item['square_meters'] ?? null,
-                'quantity' => $item['quantity'],
-                'coating_mode' => $item['coating_mode'] ?? 0,
-                'drilling_id' => $item['drilling_id'] ?? null,
-                'notes' => $item['notes'] ?? null,
-                'unit_price' => $item['unit_price'] ?? 0,
-                'total_price' => $item['total_price'] ?? 0,
-                'date_created' => now(),
-                'attachment_path' => $attachmentPath,
+            // Создаем позиции заказа (внутри транзакции)
+            foreach ($request->input('items', []) as $index => $itemData) {
+                if (empty($itemData['height']) && empty($itemData['width']) && empty($itemData['quantity'])) {
+                    continue;
+                }
+
+                $attachmentPath = $request->hasFile("items.$index.attachment")
+                    ? $request->file("items.$index.attachment")->store('order_items/attachments', 'public')
+                    : null;
+
+                // Считаем площадь сразу для этой позиции
+                $square = ($itemData['height'] * $itemData['width'] / 1_000_000) * $itemData['quantity'];
+
+                $orderItem = OrderItem::create([
+                    'order_id' => $order->id,
+                    'facade_type_id' => $itemData['facade_type_id'] ?? null,
+                    'thickness_id' => !empty($itemData['thickness_id']) ? $itemData['thickness_id'] : null,
+                    'height' => $itemData['height'],
+                    'width' => $itemData['width'],
+                    'square_meters' => $square,
+                    'quantity' => $itemData['quantity'],
+                    'coating_mode' => $itemData['coating_mode'] ?? 0,
+                    'drilling_id' => $itemData['drilling_id'] ?? null,
+                    'notes' => $itemData['notes'] ?? null,
+                    'unit_price' => $itemData['unit_price'] ?? 0,
+                    'total_price' => $itemData['total_price'] ?? 0,
+                    'date_created' => now(),
+                    'attachment_path' => $attachmentPath,
+                ]);
+
+        // Вызываю  метод расчета, который  написан в модели
+                $backendPrice = $orderItem->calculatePrice();
+
+           // Обновляю запись в базе реальной ценой
+                $orderItem->update([
+                    'total_price' => $backendPrice,
+                    'unit_price' => $orderItem->getRate()
+                ]);
+
+                $totalSquare += $square;
+                $totalPrice += $backendPrice;
+            }
+
+            // Финальное обновление сумм заказа
+            $order->update([
+                'square_meters' => $totalSquare,
+                'total_price' => $totalPrice,
             ]);
-        }
+            // ТЕПЕРЬ ОТПРАВЛЯЕМ В ТЕЛЕГРАМ (когда всё посчитано)
+            try {
+                $order->load(['customer', 'user', 'colorCode.colorCatalog', 'coatingType', 'milling']);
 
-        // Пересчёт итогов
-        $order->load('items');
 
-        $totalSquare = 0;
-        $totalPrice = 0;
+                $companyName = $order->customer->company_name ?? 'Частное лицо';
+                $managerPhone = $order->user->phone ?? 'нет тел.';
+                // Собираем название цвета динамически
+                $catalogName = $order->colorCode->colorCatalog->name ?? 'Цвет'; // RAL, NCS и т.д.
+                $colorVal = $order->colorCode->code ?? '???';
+                $coating = $order->coatingType->name ?? '';
 
-        foreach ($order->items as $item) {
-            $square = $item->square_meters
-                ?? (($item->height * $item->width / 1_000_000) * $item->quantity);
+                $colorFull = "{$catalogName} {$colorVal} {$coating}";
 
-            $totalSquare += $square;
-            $totalPrice += $item->total_price ?? 0;
-        }
+                \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
+                    'chat_id' => config('services.telegram.admin_id'),
+                    'text' => "🚀 **Новый заказ #{$order->queue_number}**\n" .
+                        "🏢 **Компания:** {$companyName}\n" .
+                        "👤 **Менеджер:** {$order->user->name} (`{$managerPhone}`)\n" .
+                        "📑 **Док. клиента:** `" . ($order->client_order_number ?: 'б/н') . "`\n\n" .
+                        "🎨 **Спецификация:**\n" .
+                        "📦 **Материал:** {$order->material}\n" .
+                        "🌈 **Цвет:** `{$colorFull}`\n" .
+                        "🪵 **Фрезеровка:**\n" . ($order->milling->name ?? 'Не указана') . "\n\n" .
+                        "📊 **Итого:**\n" .
+                        "🔢 **Кол-во:** " . collect($request->input('items', []))->sum('quantity') . " шт.\n" .
+                        "📐 **Площадь:** " . number_format($totalSquare, 2) . " м²",
+                    'parse_mode' => 'Markdown'
+                ]);
 
-        $order->update([
-            'square_meters' => $totalSquare,
-            'total_price' => $totalPrice,
-        ]);
+                // Отправляем файл чертежа, если он есть
+                if ($order->attachment_path) {
+                    \Telegram\Bot\Laravel\Facades\Telegram::sendDocument([
+                        'chat_id' => config('services.telegram.admin_id'),
+                        'document' => \Telegram\Bot\FileUpload\InputFile::create(
+                            storage_path('app/public/' . $order->attachment_path),
+                            'Чертеж_Заказа_#' . $order->queue_number . '.pdf'
+                        ),
+                        'caption' => "📎 Файл к заказу #{$order->queue_number}"
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error("Ошибка телеграма: " . $e->getMessage());
+            }
+
+            return $order;
+        }); // Конец транзакции DB::transaction
+
+        // 4. Отправка уведомления (через ОЧЕРЕДЬ!)
+        // Воркер подхватит это сразу после того, как БД сохранит транзакцию
+        Mail::to($order->user->email)->queue(new OrderReceivedMail($order));
 
         return redirect()->route('orders.show', $order->id)
             ->with('duplicate', $duplicateFound)
-            ->with('success', 'Заказ создан!');
+            ->with('success', 'Заказ №' . $order->queue_number . ' успешно создан! Отправлено подтверждение. Проверьте чертежи перед отправкой расчета.');
+
+
     }
 
 
@@ -338,7 +414,7 @@ class OrderController extends Controller
             'items.*.height' => 'required|integer|min:1',
             'items.*.width' => 'required|integer|min:1',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.thickness_id' => 'required|exists:thicknesses,id',
+            'items.*.thickness_id' => 'nullable|exists:thicknesses,id',
             'items.*.coating_mode' => 'nullable|integer|in:0,1,2',
             'items.*.facade_type_id' => 'nullable|exists:facade_types,id',
             'items.*.drilling_id' => 'nullable|exists:drillings,id',
@@ -388,7 +464,7 @@ class OrderController extends Controller
                 if ($item) {
                     $item->update([
                         'facade_type_id' => $itemData['facade_type_id'] ?? null,
-                        'thickness_id' => $itemData['thickness_id'],
+                        'thickness_id' => !empty($itemData['thickness_id']) ? $itemData['thickness_id'] : null, // Защита от пустой строки
                         'height' => $itemData['height'],
                         'width' => $itemData['width'],
                         'square_meters' => $itemData['square_meters'] ?? null,
@@ -435,16 +511,36 @@ class OrderController extends Controller
             ->with('success', 'Заказ успешно обновлён');
     }
 
-    public function indexClient()
+    public function indexClient(Request $request)
     {
         $customer = auth()->user()->customer;
-        // Загружаем только заказы этого клиента
-        $orders = Order::where('customer_id', $customer->id)
-            ->with(['status', 'colorCatalog', 'colorCode', 'coatingType', 'milling'])
-            ->orderByDesc('date_received')
-            ->get();
+        if (!$customer) abort(403);
 
-        return view('client.index', compact('orders', 'customer'));
+        $query = Order::where('customer_id', $customer->id)
+            ->with(['status', 'colorCatalog', 'colorCode', 'coatingType', 'milling']);
+
+        // --- ФИЛЬТРЫ ---
+        if ($request->filled('client_order_number')) {
+            $query->where('client_order_number', 'like', '%' . $request->client_order_number . '%');
+        }
+
+        if ($request->filled('color_code_id')) {
+            $query->where('color_code_id', $request->color_code_id);
+        }
+
+        // НОВЫЙ ФИЛЬТР ПО СТАТУСУ
+        if ($request->filled('status_id')) {
+            $query->where('status_id', $request->status_id);
+        }
+
+        $orders = $query->orderByDesc('queue_number')->paginate(30);
+
+        // Данные для выпадающих списков
+        $colorCodes = \App\Models\ColorCode::select('id', 'code')->orderBy('code')->get();
+        $statuses = \App\Models\Status::where('name', '!=', 'paint_shop')->get();
+        $millings = \App\Models\Milling::orderBy('name')->get();
+
+        return view('client.index', compact('orders', 'customer', 'colorCodes', 'millings', 'statuses'));
     }
 
 
@@ -476,7 +572,11 @@ class OrderController extends Controller
 
     public function preview(Order $order)
     {
-        $items = $order->items;
+        // Явно подгружаем всё, что нужно для шапки заказа
+        $order->load(['customer', 'colorCatalog', 'colorCode', 'milling', 'coatingType']);
+
+        $items = $order->items()->with(['facadeType', 'thickness', 'drilling'])->get();
+
         $totalQuantity = $items->sum('quantity');
         $totalSquare = $items->sum('square_meters');
 
@@ -499,13 +599,23 @@ class OrderController extends Controller
      */
     public function saw(Order $order)
     {
-        $items = $order->items()->with(['milling', 'facadeType'])->get();
+        // 1. Загружаем только клиента для шапки
+        $order->load(['customer']);
 
-        return view('orders.saw', compact('order', 'items'));
+        // 2. Загружаем позиции БЕЗ связи milling (из-за которой была ошибка)
+        $items = $order->items()
+            ->with(['facadeType', 'thickness'])
+            ->get();
+
+        $totalQuantity = $items->sum('quantity');
+
+        // 3. Возвращаем ваш старый блейд без изменений
+        return view('orders.saw', compact('order', 'items', 'totalQuantity'));
     }
 
     public function manage(Order $order, Request $request)
     {
+        $order->load(['items.drilling', 'items.facadeType', 'items.thickness']);
         $priceGroup = $request->input('price_group', 'retail');
 
         $allowed = ['retail', 'dealer', 'private'];
@@ -540,20 +650,24 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
-        $order->status_id = $request->input('status_id');
-        $order->date_status = now();
-        $order->save();
+        $order->update([
+            'status_id' => $request->input('status_id'),
+            'date_status' => now(),
+        ]);
+
+        //  кидаю задачу в очередь
+        \App\Jobs\SendOrderUpdateNotification::dispatch($order);
 
         if ($request->ajax()) {
+            $order->load('status'); // Нужно только для ответа в JS
             return response()->json([
                 'success' => true,
-                'status' => $order->status->label, // русский текст
-                'status_key' => $order->status->name, //  технический ключ
+                'status' => $order->status->label,
+                'status_key' => $order->status->name,
                 'date_status' => $order->date_status->format('d.m.Y'),
             ]);
         }
         return redirect()->back()->with('success', 'Статус заказа обновлён.');
-
     }
 
 
@@ -564,28 +678,42 @@ class OrderController extends Controller
         return view('orders.partials.calculation-client', compact('order', 'priceGroup'));
     }
 
-   public function exportClientPdf(Order $order, Request $request)
+    public function exportClientPdf(Order $order, Request $request)
     {
+        // 1. ПОДГРУЖАЕМ СВЯЗИ
+        $order->load([
+            'customer',
+            'colorCatalog',
+            'colorCode',
+            'coatingType',
+            'milling',
+            'items.facadeType',
+            'items.thickness',
+            'items.drilling' // Самое важное для цены сверловки
+        ]);
+
         $priceGroup = $request->input('price_group', 'retail');
         $allowed = ['retail', 'dealer', 'private'];
         if (!in_array($priceGroup, $allowed, true)) {
             $priceGroup = 'retail';
         }
-        //  генериру PDF
+
+        // 2. Генерируем PDF
         $pdf = Pdf::loadView('orders.pdf.calculation-client', [
             'order' => $order,
             'priceGroup' => $priceGroup,
-            ]);
+        ]);
+
         $path = storage_path("app/public/order-{$order->queue_number}-calculation.pdf");
         $pdf->save($path);
 
         return response()->download($path)->deleteFileAfterSend();
     }
 
+
     public function sendCalculation(Order $order, Request $request)
     {  //$pdf = Pdf::loadHTML('<h1>Тестовый PDF</h1>');
-        // $recipient = $order->customer?->email ?? 'test@example.com'; Mail::raw('Во вложении расчёт заказа', function ($message) use ($order, $pdf, $recipient) { $message->to($recipient) ->subject("Расчёт заказа №{$order->id}") ->attachData($pdf->output(), "order-{$order->id}-calculation.pdf"); }); return back()->with('success', "Расчёт отправлен на {$recipient}!");
-        //Mail::raw('Тестовое письмо', function ($message) { $message->to('test@example.com') ->subject('MailHog test'); });
+
         $order->load([
             'user',
             'customer',
@@ -594,7 +722,8 @@ class OrderController extends Controller
             'coatingType',
             'milling',
             'items.facadeType',
-            'items.thickness'
+            'items.thickness',
+            'items.drilling'
         ]);
 
         $priceGroup = $request->input('price_group', 'retail');
@@ -609,12 +738,40 @@ class OrderController extends Controller
             return back()->with('error', 'У клиента не найден ни один пользователь с email.');
         }
         ///Mail::send(new CalculationMail($order, $priceGroup));
-      // Mail::to($recipient)->send(new CalculationMail($order, $priceGroup));
+        // Mail::to($recipient)->send(new CalculationMail($order, $priceGroup));
         Mail::to($recipient)->queue(new CalculationMail($order, $priceGroup));
 
-
         return back()->with('success', "Расчёт отправлен на {$recipient}!");
-
     }
+
+    public function updatePayment(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        // 1. Фиксируем итоговую цену СРАЗУ, если она 0, ДО сравнения
+        if ($order->total_price <= 0) {
+            $priceGroup = $request->input('price_group', 'retail');
+            $order->total_price = $order->calculateTotal($priceGroup);
+        }
+
+        // 2. Прибавляем платеж
+        $order->paid_amount += (float)$request->amount;
+
+        // 3. Сравниваем (используем небольшую дельту для исключения ошибок плавающей точки)
+        if ($order->paid_amount >= ($order->total_price - 0.01)) {
+            $order->payment_status = 'paid';
+        } elseif ($order->paid_amount > 0) {
+            $order->payment_status = 'partial';
+        } else {
+            $order->payment_status = 'unpaid';
+        }
+
+        $order->save();
+
+        return back()->with('success', 'Payment of $' . $request->amount . ' posted!');
+    }
+
 
 }

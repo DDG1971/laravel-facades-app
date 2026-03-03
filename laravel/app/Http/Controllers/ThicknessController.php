@@ -41,6 +41,11 @@ class ThicknessController extends Controller
          return redirect()->route('thicknesses.index')
              ->with('success', 'Толщина добавлена!');
      }
+    public function show(Thickness $thickness)
+    {
+        // Вместо показа страницы просто иду на форму редактирования
+        return redirect()->route('thicknesses.edit', $thickness);
+    }
      //  форма редактирования
      public function edit(Thickness $thickness)
      {

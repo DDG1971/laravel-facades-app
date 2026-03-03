@@ -27,31 +27,29 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'company_name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'company_email' => ['nullable', 'email', 'max:255'], // Новое поле для компании
+            'phone' => ['nullable', 'string', 'max:50'], // Личный телефон менеджера
         ]);
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'role'     => 'pending',
-        ]);
-
-        // 3. Создаём компанию (только базовые поля)
+        // 1. Сначала создаём компанию (Customer)
         $customer = Customer::create([
             'company_name' => $request->company_name,
-            'phone'        => $request->phone,
-            // остальные поля (address, contract_number и т.п.) заполняет админ позже
+            'email'        => $request->company_email, // Почта компании
+            // Поле phone в Customer пока можно оставить пустым или писать туда рабочий тел.
         ]);
 
-        // 4. Связываем пользователя с компанией
-        $user->customer_id = $customer->id;
-        $user->save();
+        // 2. Создаём пользователя (User) и сразу привязываем к компании
+        $user = User::create([
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'phone'       => $request->phone, // Личный телефон в таблицу users
+            'role'        => 'pending',
+            'customer_id' => $customer->id, // Привязка сразу при создании
+        ]);
 
-        // 5. Запускаем событие Registered (уведомления, письма и т.д.)
         event(new Registered($user));
 
-        // 6. Авторизуем и редиректим на dashboard
         Auth::login($user);
 
         return redirect()->route('dashboard');

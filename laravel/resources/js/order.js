@@ -34,18 +34,21 @@ function addRowIfValid(currentRow) {
     const templateRow = document.getElementById('item-row-template');
     const newRow = templateRow.cloneNode(true);
 
-    Array.from(newRow.querySelectorAll('input, select')).forEach(el => {
-        const name = el.getAttribute('name');
-        if (name) {
-            // заменяем __INDEX__ на реальный индекс
-            el.setAttribute('name', name.replace('__INDEX__', rowIndex));
-            el.removeAttribute('disabled');
-            if (el.tagName.toLowerCase() === 'select') {
-                el.selectedIndex = 0;
-            } else {
-                el.value = '';
-            }
+    Array.from(newRow.querySelectorAll('input, select')).forEach(function(el) {
+        let name = el.getAttribute('name');
+        if (!name) return;
+
+        // Присваиваем индекс новой строке
+        let newName = name.replace('__INDEX__', rowIndex);
+        el.setAttribute('name', newName);
+        el.removeAttribute('disabled');
+
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else if (el.type !== 'file') {
+            el.value = '';
         }
+
         if (el.type === 'file') el.value = '';
     });
 
@@ -54,9 +57,11 @@ function addRowIfValid(currentRow) {
     tableBody.appendChild(newRow);
     rowIndex++;
 
-    newRow.scrollIntoView({behavior: 'smooth', block: 'end'});
-    const firstControl = newRow.querySelector('input:not([type="file"]), select');
-    if (firstControl) firstControl.focus();
+    setTimeout(() => {
+        newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstControl = newRow.querySelector('input:not([type="file"]), select');
+        if (firstControl) firstControl.focus({ preventScroll: true });
+    }, 100);
 
     return newRow;
 }
@@ -154,13 +159,16 @@ document.addEventListener('keydown', function (e) {
         if (nextIdx < visibleInputs.length) visibleInputs[nextIdx].focus();
     }
 });
-
-// Пересчёт итогов
+//пересчет итогов
 function recalcTotals() {
+    // 1. Проверяем, есть ли вообще таблица с товарами на этой странице
+    const tableBody = document.getElementById('order-items-body');
+    if (!tableBody) return; // Если таблицы нет (мы на Index), просто выходим из функции
+
     let totalQty = 0;
     let totalSquare = 0;
 
-    document.querySelectorAll('#order-items-body tr:not(#item-row-template)').forEach(row => {
+    tableBody.querySelectorAll('tr:not(#item-row-template)').forEach(row => {
         const qty = parseFloat(row.querySelector('[name*="[quantity]"]')?.value) || 0;
         const h = parseFloat(row.querySelector('[name*="[height]"]')?.value) || 0;
         const w = parseFloat(row.querySelector('[name*="[width]"]')?.value) || 0;
@@ -169,53 +177,89 @@ function recalcTotals() {
         totalSquare += (h * w / 1_000_000) * qty;
     });
 
-    document.getElementById('total-quantity').textContent = totalQty;
-    document.getElementById('total-square').textContent = totalSquare.toFixed(2);
+    // 2. Безопасно выводим итоги
+    const qtyElem = document.getElementById('total-quantity');
+    const squareElem = document.getElementById('total-square');
+
+    if (qtyElem) qtyElem.textContent = totalQty;
+    if (squareElem) squareElem.textContent = totalSquare.toFixed(2);
 }
 
-document.addEventListener('input', recalcTotals);
+// Слушатель тоже лучше вешать только если мы на нужной странице
+if (document.getElementById('order-items-body')) {
+    document.addEventListener('input', recalcTotals);
+}
 
-// 🔹 Обновление статуса заказа (AJAX)
-const statusClasses = {
-    new: ['bg-blue-100', 'text-blue-800'],
-    received: ['bg-yellow-100', 'text-yellow-800'],
-    in_progress: ['bg-indigo-300', 'text-indigo-900'],
-    paint_shop: ['bg-purple-100', 'text-purple-800'],
-    ready: ['bg-green-100', 'text-green-800'],
-    shipped: ['bg-teal-100', 'text-teal-800'],
-    completed: ['bg-gray-200', 'text-gray-800'],
-    cancelled: ['bg-red-100', 'text-red-800']
-};
+window.updateStatus = function(orderId, statusId) {
+    console.log('updateStatus called', orderId, statusId);
 
-window.updateStatus = function (orderId, statusId) {
-    console.log('updateStatus вызван', orderId, statusId);
+    // 1. Проверка токена (чтобы не упасть, если его нет)
+    const tokenElement = document.querySelector('meta[name="csrf-token"]');
+    if (!tokenElement) {
+        console.error('CSRF token not found!');
+        return;
+    }
+
+    // 2. Оптимистичное обновление (по желанию):
+    // Можно добавить лоадер на строку здесь, чтобы пользователь видел, что процесс пошел.
+
     fetch(`/orders/${orderId}/status`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': tokenElement.content,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({status_id: statusId})
+        body: JSON.stringify({ status_id: statusId })
     })
-        .then(r => r.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
         .then(data => {
-            console.log('ответ сервера', data);
-
+            console.log('server response', data);
             if (data.success) {
-                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                console.log('row найден?', row);
-
-                if (row) {
-                    Object.values(statusClasses).flat().forEach(cls => row.classList.remove(cls));
-                    statusClasses[data.status_key].forEach(cls => row.classList.add(cls));
-                }
-                const dateCell = document.querySelector(`#date-status-${orderId}`);
+                // Обновляем дату (безопасно)
+                const dateCell = document.getElementById(`date-status-${orderId}`);
                 if (dateCell) {
                     dateCell.textContent = data.date_status;
                 }
+
+                // Обновляем цвет строки
+                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                if (row) {
+                    // Список всех возможных классов (чтобы не перечислять вручную каждый раз)
+                    const allStatusClasses = [
+                        'bg-blue-100', 'text-blue-800', 'bg-yellow-100', 'text-yellow-800',
+                        'bg-indigo-300', 'text-indigo-900', 'bg-purple-100', 'text-purple-800',
+                        'bg-green-100', 'text-green-800', 'bg-teal-100', 'text-teal-800',
+                        'bg-gray-200', 'text-gray-800', 'bg-red-100', 'text-red-800'
+                    ];
+                    row.classList.remove(...allStatusClasses);
+
+                    // Карта статусов (так код чище и быстрее, чем switch)
+                    const statusMap = {
+                        'new': ['bg-blue-100', 'text-blue-800'],
+                        'received': ['bg-yellow-100', 'text-yellow-800'],
+                        'in_progress': ['bg-indigo-300', 'text-indigo-900'],
+                        'paint_shop': ['bg-purple-100', 'text-purple-800'],
+                        'ready': ['bg-green-100', 'text-green-800'],
+                        'shipped': ['bg-teal-100', 'text-teal-800'],
+                        'completed': ['bg-gray-200', 'text-gray-800'],
+                        'cancelled': ['bg-red-100', 'text-red-800']
+                    };
+
+                    const newClasses = statusMap[data.status_key];
+                    if (newClasses) {
+                        row.classList.add(...newClasses);
+                    }
+                }
             }
         })
-        .catch(error => console.error('Ошибка обновления статуса:', error));
+        .catch(err => {
+            console.error('Fetch error:', err);
+            alert('Ошибка при обновлении статуса!');
+        });
 }
 
 

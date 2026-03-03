@@ -97,5 +97,18 @@ class Order extends Model
         $this->notify(new CustomVerifyEmail);
     }
 
+    /**
+     * Вычисляет остаток, который клиент должен доплатить.
+     * Использование в коде: $order->debt_amount
+     */
+    public function getDebtAmountAttribute()
+    {
+        // Если в базе 0, берем расчетную цену, иначе сохраненную
+        $total = $this->total_price > 0 ? $this->total_price : $this->calculateTotal('retail');
+        $debt = $total - $this->paid_amount;
+        return $debt > 0 ? $debt : 0;
+    }
+
+
 
 }

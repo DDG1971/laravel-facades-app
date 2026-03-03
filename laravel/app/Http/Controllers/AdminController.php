@@ -27,15 +27,7 @@ class AdminController extends Controller
     }
     public function dashboard(): \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
     {
-       /* if (auth()->user()->role === 'admin') {
-        // считаем статистику для админа
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth   = Carbon::now()->endOfMonth();
 
-        $totalSquare = OrderItem::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->sum('square_meters');
-            return view('admin.dashboard', ['totalSquare' => 0]);*/
-        //return view('admin.dashboard', compact('totalSquare'));
         Log::info('Admin dashboard route reached');
 
         return view('admin.dashboard', ['totalSquare' => 0]);

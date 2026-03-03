@@ -146,6 +146,11 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/masterminds/html5" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/sabberworm/php-css-parser" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/thecodingmachine/safe" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/beyondcode/expose" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/irazasyed/telegram-bot-sdk" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel-zero/phar-updater" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/sanctum" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/league/event" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

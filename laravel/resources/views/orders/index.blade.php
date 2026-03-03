@@ -1,12 +1,64 @@
 <x-app-layout>
     <x-slot name="head">
-        <x-assets />
+        <x-assets/>
     </x-slot>
 
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Список заказов
-        </h2>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Список заказов
+            </h2>
+
+            <!-- Форма фильтрации -->
+            <form method="GET" action="{{ route('admin.orders.index') }}" class="flex flex-wrap gap-2">
+                <!-- Поиск по номеру -->
+                <input type="text"
+                       name="client_order_number"
+                       value="{{ request('client_order_number') }}"
+                       placeholder="№ заказа клиента"
+                       class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-40">
+
+                <!-- Выбор клиента -->
+                <select name="customer_id" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <option value="">Все клиенты</option>
+                    @foreach($customers as $customer)
+                        <option value="{{ $customer->id }}" @selected(request('customer_id') == $customer->id)>
+                            {{ $customer->company_name }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <!-- Выбор цвета -->
+                <select name="color_code_id" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <option value="">Все цвета</option>
+                    @foreach($colorCodes as $color)
+                        <option value="{{ $color->id }}" @selected(request('color_code_id') == $color->id)>
+                            {{ $color->code }}
+                        </option>
+                    @endforeach
+                </select>
+                <!-- Выбор фрезеровки -->
+                <select name="milling_id" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
+                    <option value="">Все фрезеровки</option>
+                    @foreach($millings as $milling)
+                        <option value="{{ $milling->id }}" @selected(request('milling_id') == $milling->id)>
+                            {{ $milling->name }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">
+                    Найти
+                </button>
+
+                @if(request()->anyFilled(['customer_id', 'color_code_id','milling_id','client_order_number']))
+                    <a href="{{ route('admin.orders.index') }}"
+                       class="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600">
+                        Сбросить
+                    </a>
+                @endif
+            </form>
+        </div>
     </x-slot>
 
     <div class="py-6">
@@ -14,6 +66,23 @@
             <!-- фиксированный хедер -->
             <div class="overflow-x-auto">
                 <table class="w-full table-fixed border-separate text-sm">
+                    <!-- Группа колонок для жесткой фиксации ширины -->
+                    <colgroup>
+                        <col class="w-[60px]">  <!-- Очер. -->
+                        <col class="w-[180px]"> <!-- Клиент -->
+                        <col class="w-[120px]"> <!-- № клиента -->
+                        <col class="w-[100px]"> <!-- Дата -->
+                        <col class="w-[80px]"> <!-- Мат-лы -->
+                        <col class="w-[100px]"> <!-- Каталог -->
+                        <col class="w-[100px]"> <!-- № цвета -->
+                        <col class="w-[120px]"> <!-- Покрыт. -->
+                        <col class="w-[150px]"> <!-- Фрезеровка -->
+                        <col class="w-[70px]">  <!-- м² -->
+                        <col class="w-[150px]"> <!-- Статус -->
+                        <col class="w-[110px]"> <!-- Дата статуса -->
+                        <col class="w-[80px]">  <!-- Цех № -->
+                        <col class="w-[100px]"> <!-- Действ -->
+                    </colgroup>
                     <thead class="bg-gray-100 shadow-sm">
                     <tr>
                         <th class="border px-2 py-1">Очер.</th>
@@ -26,28 +95,50 @@
                         <th class="border px-2 py-1">Покрыт.</th>
                         <th class="border px-2 py-1">Фрезеровка</th>
                         <th class="border px-2 py-1">м²</th>
-                        <th class="border px-2 py-1">Статус</th>
+                        <th class="border px-2 py-1">
+                            <div class="flex items-center justify-center gap-1">
+                                <span>Статус</span>
+                                <span class="text-lg text-blue-600 font-bold leading-none cursor-help"
+                                      title="Статус производства и оплаты">
+                                                 💳
+                                 </span>
+                            </div>
+                        </th>
                         <th class="border px-2 py-1">Дата статуса</th>
-                        <th class="border px-2 py-1">Цех №</th>
+                        <th class="border px-2 py-1">Расчет</th>
                         <th class="border px-2 py-1">Действ</th>
                     </tr>
                     </thead>
                 </table>
             </div>
-
-
             <!-- тело -->
             <div class="overflow-x-auto overflow-y-auto h-[70vh]">
                 <table class="w-full table-fixed border-separate text-sm">
+                    <colgroup>
+                        <col class="w-[60px]">  <!-- Очер. -->
+                        <col class="w-[180px]"> <!-- Клиент -->
+                        <col class="w-[120px]"> <!-- № клиента -->
+                        <col class="w-[100px]"> <!-- Дата -->
+                        <col class="w-[80px]"> <!-- Мат-лы -->
+                        <col class="w-[100px]"> <!-- Каталог -->
+                        <col class="w-[100px]"> <!-- № цвета -->
+                        <col class="w-[120px]"> <!-- Покрыт. -->
+                        <col class="w-[150px]"> <!-- Фрезеровка -->
+                        <col class="w-[70px]">  <!-- м² -->
+                        <col class="w-[150px]"> <!-- Статус -->
+                        <col class="w-[110px]"> <!-- Дата статуса -->
+                        <col class="w-[80px]">  <!-- Расчет -->
+                        <col class="w-[100px]"> <!-- Действ -->
+                    </colgroup>
                     <tbody>
                     @forelse($orders as $order)
-                        <<tr data-order-id="{{ $order->id }}"
-                             class="transition-colors duration-300 hover:bg-gray-50
+                        <tr data-order-id="{{ $order->id }}"
+                            class="transition-colors duration-300 hover:bg-gray-50
                               @switch($order->status->name)
                                @case('new') bg-blue-100 text-blue-800 @break
                                 @case('received') bg-yellow-100 text-yellow-800 @break
                                  @case('in_progress') bg-indigo-300 text-indigo-900 @break
-                                  @case('paint_shop') bg-purple-100 text-purple-800 @break
+                                 {{-- @case('paint_shop') bg-purple-100 text-purple-800 @break --}}
                                    @case('ready') bg-green-100 text-green-800 @break
                                     @case('shipped') bg-teal-100 text-teal-800 @break
                                      @case('completed') bg-gray-200 text-gray-800 @break
@@ -70,7 +161,7 @@
                             <!-- Материал -->
                             <td class="border px-2 py-1">{{ $order->material }}</td>
                             <!-- Каталог -->
-                            <td class="border px-2 py-1">{{ $order->colorCatalog->name_en ?? '—' }}</td>
+                            <td class="border px-2 py-1 text-center">{{ $order->colorCatalog->name_en ?? '—' }}</td>
                             <!-- Код цвета -->
                             <td class="border px-2 py-1 text-center">{{ $order->colorCode->code ?? '—' }}</td>
                             <!-- Покрытие -->
@@ -81,14 +172,29 @@
                             <td class="border px-2 py-1 text-center">{{ $order->square_meters }}</td>
                             <!-- Статус -->
                             <td class="border px-2 py-1 text-center">
-                                <select onchange="updateStatus({{ $order->id }}, this.value)"
-                                        class="text-sm border rounded px-1 py-0.5 focus:outline-none focus:ring focus:ring-blue-300">
-                                    @foreach($statuses as $status)
-                                        <option value="{{ $status->id }}" @selected($order->status_id == $status->id)>
-                                            {{ $status->label }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <!-- Твой текущий Select -->
+                                    <select onchange="updateStatus({{ $order->id }}, this.value)"
+                                            class="text-sm border rounded px-1 py-0.5 focus:outline-none focus:ring focus:ring-blue-300">
+                                        @foreach($statuses as $status)
+                                            <option value="{{ $status->id }}" @selected($order->status_id == $status->id)>
+                                                {{ $status->label }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+
+                                    <!-- Индикатор оплаты (💰, 💸 или ❌) -->
+                                    <div class="text-lg" title="{{
+                                        $order->payment_status === 'paid' ? 'Fully Paid'
+                                         : 'Amount Due: $' . number_format($order->debt_amount, 2, '.', ',')
+                                    }}">
+                                        @switch($order->payment_status)
+                                            @case('paid') <span class="cursor-help">💰</span> @break
+                                            @case('partial') <span class="cursor-help">💸</span> @break
+                                            @default <span class="cursor-help opacity-40">❌</span> @break
+                                        @endswitch
+                                    </div>
+                                </div>
                             </td>
                             <!-- Дата статуса -->
                             <td id="date-status-{{ $order->id }}" class="border px-2 py-1 text-center">
@@ -98,8 +204,9 @@
                             <td class="border px-2 py-1 text-center">
                                 @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
                                     <a href="{{ route('orders.manage', $order->id) }}"
-                                       class="px-2 py-1 underline hover:font-bold">
-                                        ⚙ Управление
+                                       class="text-lg hover:scale-110 transition-transform inline-block"
+                                       title="Расчеты и PDF">
+                                        🧮
                                     </a>
                                 @endif
                             </td>
@@ -123,66 +230,13 @@
                             </td>
                         </tr>
                     @endforelse
-                    <!-- 🔹 Тестовая строка -->
-                    <tr data-order-id="999" class="bg-blue-100 text-blue-800">
-                        <td class="border px-2 py-1 text-center">999</td>
-                        <td class="border px-2 py-1">Тестовый клиент</td>
-                        <td class="border px-2 py-1 text-center">TST-001</td>
-                        <td class="border px-2 py-1 text-center">06.02.2026</td>
-                        <td class="border px-2 py-1">MDF</td>
-                        <td class="border px-2 py-1">Каталог</td>
-                        <td class="border px-2 py-1 text-center">C01</td>
-                        <td class="border px-2 py-1">Покрытие</td>
-                        <td class="border px-2 py-1">Фрезеровка</td>
-                        <td class="border px-2 py-1 text-center">10</td>
-                        <td class="border px-2 py-1 text-center">
-                            <select onchange="updateStatus(999, this.value)">
-                                <option value="1">Новый</option>
-                                <option value="2">В работе</option>
-                                <option value="3">Готов</option>
-                            </select>
-                        </td>
-                        <td id="date-status-999" class="border px-2 py-1 text-center">—</td>
-                        <td class="border px-2 py-1 text-center">Цех</td>
-                        <td class="border px-2 py-1 text-center">⚙</td>
-                        <td class="border px-2 py-1 text-center">✏️</td>
-                    </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="mt-4 px-4 pb-4">
+                {{ $orders->appends(request()->query())->links() }}
             </div>
         </div>
     </div>
 
-                    <script>
-                        const statusClasses = {
-                            new: ['bg-blue-100','text-blue-800'],
-                            in_progress: ['bg-indigo-300','text-indigo-900'],
-                            ready: ['bg-green-100','text-green-800']
-                        };
-
-                        window.updateStatus = function(orderId, statusId) {
-                            console.log('updateStatus вызван', orderId, statusId);
-
-                            const fakeResponse = {
-                                success: true,
-                                status_key: statusId == 1 ? 'new' : statusId == 2 ? 'in_progress' : 'ready',
-                                date_status: new Date().toLocaleDateString('ru-RU')
-                            };
-
-                            if (fakeResponse.success) {
-                                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                                console.log('row найден?', row);
-
-                                if (row) {
-                                    Object.values(statusClasses).flat().forEach(cls => row.classList.remove(cls));
-                                    statusClasses[fakeResponse.status_key].forEach(cls => row.classList.add(cls));
-                                }
-
-                                const dateCell = document.querySelector(`#date-status-${orderId}`);
-                                if (dateCell) {
-                                    dateCell.textContent = fakeResponse.date_status;
-                                }
-                            }
-                        };
-                    </script>
 </x-app-layout>

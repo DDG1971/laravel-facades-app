@@ -28,6 +28,18 @@
                 <span><strong>№кл-та:</strong> {{ $order->client_order_number }}</span>
             </div>
         </div>
+        {{--шапка--}}
+        <div class="flex justify-center items-center gap-6 mb-2 border-b pb-2">
+    <span>
+        <strong>Цвет:</strong>
+        {{ $order->colorCatalog->name_en ?? '' }}
+        {{ $order->colorCode->code ?? '' }}
+        {{ $order->coatingType->name ?? '' }}
+    </span>
+            <span>
+        <strong>Фрезеровка:</strong> {{ $order->milling->name ?? '—' }}
+    </span>
+        </div>
 
         <!-- Общий файл заказа -->
         @if($order->attachment_path)
@@ -137,11 +149,18 @@
 
         <!-- Кнопки -->
         <div class="no-print mt-6 flex justify-center space-x-4">
+            <!-- Печать доступна ВСЕМ -->
             <button onclick="window.print()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                 Печать
             </button>
+
+            <!-- Логика кнопки НАЗАД для каждого типа пользователя -->
             @if(auth()->user()->hasRole('admin'))
                 <a href="{{ route('admin.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Назад к заказам
+                </a>
+            @elseif(auth()->user()->hasRole('manager'))
+                <a href="{{ route('manager.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     Назад к заказам
                 </a>
             @elseif(auth()->user()->hasRole('customer'))
@@ -149,6 +168,8 @@
                     Назад к заказам
                 </a>
             @endif
+
+            <!-- Кнопка НА ПИЛУ только для админа и менеджера -->
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
                 <a href="{{ route('orders.saw', $order->id) }}" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
                     На пилу

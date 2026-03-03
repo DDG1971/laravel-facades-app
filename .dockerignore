@@ -1,0 +1,12 @@
+laravel/node_modules
+laravel/vendor
+laravel/public/hot
+laravel/public/storage
+storage/*.key
+storage/pail
+node_modules
+vendor
+.git
+.gitignore
+npm-debug.log
+*.log

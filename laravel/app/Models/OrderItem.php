@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Log;
 
 
 class OrderItem extends Model
@@ -87,46 +88,121 @@ return true;
 
     public function calculatePrice(string $priceGroup = 'retail'): float
     {
-        // 1. базовая цена от Milling
+        // 1. Используем уже готовый метод для получения ставки (за м.п. или м2)
+        $pricePerUnit = $this->getRate($priceGroup);
+
+        // Выясняем единицу измерения (нужно для логики количества и допов)
         $millingBase = $this->order->milling?->getBasePriceFor($priceGroup) ?? 0;
-        $millingUnit = 'm2';
+        $facadePricing = $this->facadeType?->resolvePricing($millingBase, 'm2')
+            ?? ['base' => $millingBase, 'unit' => 'm2'];
+        $unit = $facadePricing['unit'];
 
-        // 2. фасад корректирует базовую цену
-        $facadePricing = $this->facadeType?->resolvePricing($millingBase, $millingUnit)
-            ?? ['base' => $millingBase, 'unit' => $millingUnit];
-        $pricePerUnit = $facadePricing['base'];
+        // 2. Определение "количества"
+        if ($unit === 'lm') {
+            $quantityAmount = ($this->height / 1000) * $this->quantity;
+        } elseif ($unit === 'piece') {
+            $quantityAmount = $this->quantity;
+        } else {
+            $quantityAmount = ($this->height * $this->width / 1_000_000) * $this->quantity;
+        }
 
-        // 3. добавка за толщину
-        $pricePerUnit += $this->thickness?->price ?? 0;
+        $total = $pricePerUnit * $quantityAmount;
 
-        // 4. добавка за покрытие (берётся из заказа)
-        $pricePerUnit += $this->order->coatingType?->price ?? 0;
+        // 3. Расчет допов только для листового материала (м2)
+        if ($unit === 'm2') {
+            $area = ($this->height * $this->width / 1_000_000) * $this->quantity;
 
-        //5 . площадь поз
-        $area = ($this->height * $this->width / 1_000_000) * $this->quantity;
+            // Двусторонняя покраска
+            if ($this->isDoubleSided()) {
+                $basePaint = 20;
+                $coatingExtra = 0;
+                if ($this->order->coatingType) {
+                    $coatingExtra = match(strtolower($this->order->coatingType->name)) {
+                        'supermat' => 5,
+                        'supermat+varnish' => 10,
+                        'glossy' => 20,
+                        default => 0
+                    };
+                }
+                $total += ($area * ($basePaint + $coatingExtra));
+            }
 
-        // 6. отдельный расчёт за двухсторонний окрас
-         $doubleSidedCost = 0;
-         if ($this->isDoubleSided()) {
-             $basePaint = 20;
-             $coatingExtra = 0;
+            // Сверловка — ТЕПЕРЬ ЧЕРЕЗ ЕДИНЫЙ МЕТОД
+            if ($this->drilling) {
+                $unitPrice = $this->drilling->price ?? 0;
+                $count = $this->getDrillingCount(); // Вызываю  новый метод
+                $total += ($unitPrice * $count * $this->quantity);
+            }
+        }
 
-             if ($this->order->coatingType) {
-                 switch ($this->order->coatingType->name) {
-                     case 'supermat': $coatingExtra = 5;
-                     break;
-                     case 'supermat+lacquer': $coatingExtra = 10;
-                     break;
-                     case 'glossy': $coatingExtra = 20;
-                     break;
-                 }
-             }
-             $doubleSidedCost = $area * ($basePaint + $coatingExtra);
-         }
-        // 7. частичная окраска (+5 к базовой цене за м²)
-         if ($this->isPartialCoating()) { $pricePerUnit += 5; }
+        return (float) $total;
+    }
 
-         // итоговая цена = цена за м² * площадь + доп. окрас
-         return ($pricePerUnit * $area) + $doubleSidedCost;
+
+    public function getDrillingCount(): int
+    {
+        if (!$this->drilling) {
+            return 0;
+        }
+
+        $drillingName = $this->drilling->name_en;
+        // Определяем, по какой стороне считать петли (ширина или высота)
+        $sizeForCalc = ($drillingName === 'hinges_width') ? $this->width : $this->height;
+
+        // Если это не петли, а другой вид сверловки (например, 1 отверстие)
+        if (!in_array($drillingName, ['hinges_height', 'hinges_width'])) {
+            return 1;
+        }
+
+        //  сетка стандартов присадки
+        return match (true) {
+            $sizeForCalc < 1000 => 2,
+            $sizeForCalc < 1500 => 3,
+            $sizeForCalc < 2100 => 4,
+            $sizeForCalc < 2500 => 5,
+            default => 6,
+        };
+    }
+    /**
+     * Получение финальной ставки (цены за ед. изм.)
+     */
+    public function getRate(string $priceGroup = 'retail'): float
+    {
+        $millingBase = $this->order->milling?->getBasePriceFor($priceGroup) ?? 0;
+        $facadePricing = $this->facadeType?->resolvePricing($millingBase, 'm2')
+            ?? ['base' => $millingBase, 'unit' => 'm2'];
+
+        $rate = (float) $facadePricing['base'];
+        $unit = $facadePricing['unit'];
+        $facadeName = $this->facadeType?->name_en;
+
+        // Список исключений (для них наценка за покрытие всегда 0)
+        $noCoatingExtra = [
+            'PlugPVC',
+            'CornerPVC_outer',
+            'CornerPVC_inside'
+        ];
+
+        // Если это НЕ исключение и есть выбранное покрытие
+        if (!in_array($facadeName, $noCoatingExtra) && $this->order->coatingType) {
+            $cName = strtolower($this->order->coatingType->name);
+
+            if ($unit === 'lm') {
+                if (str_contains($cName, 'glossy')) {
+                    $rate += 10;
+                } elseif ($cName !== 'matte') {
+                    $rate += 5;
+                }
+            } else {
+                // Для обычных фасадов (m2) и других штучных изделий (piece)
+                $rate += ($this->order->coatingType->price ?? 0);
+                $rate += ($this->thickness?->price ?? 0);
+            }
+            if ($this->coating_mode == 2) {
+                $rate += 5; // Если "Частич", ставка растет на 5
+            }
+        }
+
+        return $rate;
     }
 }

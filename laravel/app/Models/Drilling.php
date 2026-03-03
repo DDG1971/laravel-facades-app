@@ -8,7 +8,7 @@ class Drilling extends Model
 {
 
 
-    protected $fillable = ['name_en', 'name_ru'];
+    protected $fillable = ['name_en', 'name_ru' ,'price'];
 
     public function orderItems()
     {

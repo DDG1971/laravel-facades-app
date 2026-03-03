@@ -150,6 +150,11 @@
       <path value="$PROJECT_DIR$/laravel/vendor/sabberworm/php-css-parser" />
       <path value="$PROJECT_DIR$/laravel/vendor/barryvdh/laravel-dompdf" />
       <path value="$PROJECT_DIR$/laravel/vendor/thecodingmachine/safe" />
+      <path value="$PROJECT_DIR$/laravel/vendor/irazasyed/telegram-bot-sdk" />
+      <path value="$PROJECT_DIR$/laravel/vendor/league/event" />
+      <path value="$PROJECT_DIR$/laravel/vendor/laravel/sanctum" />
+      <path value="$PROJECT_DIR$/laravel/vendor/beyondcode/expose" />
+      <path value="$PROJECT_DIR$/laravel/vendor/laravel-zero/phar-updater" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

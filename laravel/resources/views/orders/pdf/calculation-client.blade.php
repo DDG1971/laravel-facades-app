@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
-        h2 { margin-bottom: 10px; }
-        .header { margin-bottom: 15px; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #444; padding: 4px; text-align: center; }
-        th { background: #eee; }
-        .footer { margin-top: 10px; font-size: 10px; color: #555; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #333; }
+        h2 { margin-bottom: 10px; text-align: center; }
+        .header { margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .header p { margin: 2px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th, td { border: 1px solid #444; padding: 4px 2px; text-align: center; word-wrap: break-word; }
+        th { background: #eee; font-size: 10px; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: bold; }
+        .footer { margin-top: 15px; font-size: 9px; color: #555; line-height: 1.4; }
     </style>
-    <title> </title>
 </head>
 <body>
 <h2>Расчёт заказа №{{ $order->queue_number }}</h2>
@@ -20,11 +22,8 @@
     <p><strong>Дата создания:</strong> {{ $order->created_at->format('d.m.Y') }}</p>
     <p><strong>Клиент:</strong> {{ $order->customer->company_name ?? '—' }}</p>
     <p><strong>№ заказа клиента:</strong> {{ $order->client_order_number ?? '—' }}</p>
-    <p><strong>Каталог цветов:</strong> {{ $order->colorCatalog->name_en ?? '—' }}</p>
-    <p><strong>Код цвета:</strong> {{ $order->colorCode->code ?? '—' }}</p>
-    <p><strong>Тип покрытия:</strong> {{ $order->coatingType->label ?? '—' }}</p>
-    <p><strong>Материал:</strong> {{ $order->material ?? '—' }}</p>
-    <p><strong>Фрезеровка:</strong> {{ $order->milling->name ?? '—' }}</p>
+    <p><strong>Цвет:</strong> {{ $order->colorCatalog->name_en ?? '' }} {{ $order->colorCode->code ?? '' }} ({{ $order->coatingType->label ?? '—' }})</p>
+    <p><strong>Фрезеровка:</strong> {{ $order->milling->name ?? '—' }} | <strong>Материал:</strong> {{ $order->material ?? '—' }}</p>
 </div>
 
 @php $group = $priceGroup ?? 'retail'; @endphp
@@ -32,15 +31,16 @@
 <table>
     <thead>
     <tr>
-        <th>Фасад</th>
-        <th>Высота</th>
-        <th>Ширина</th>
-        <th>Кол-во</th>
-        <th>Площадь, м²</th>
-        <th>Толщина</th>
-        <th>2-стор. окрас</th>
-        <th>Ставка (за м²)</th>
-        <th>Цена</th>
+        <th style="width: 18%;">Фасад</th>
+        <th style="width: 7%;">Выс.</th>
+        <th style="width: 7%;">Шир.</th>
+        <th style="width: 5%;">Кол.</th>
+        <th style="width: 8%;">М²</th>
+        <th style="width: 10%;">Толщ.</th>
+        <th style="width: 8%;">2-с. окр</th>
+        <th style="width: 15%;">Сверловка</th> {{-- НОВАЯ КОЛОНКА --}}
+        <th style="width: 10%;">Ставка</th>
+        <th style="width: 12%;">Цена</th>
     </tr>
     </thead>
     <tbody>
@@ -48,49 +48,45 @@
         @php
             $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
             $price = $item->calculatePrice($group);
-            $millingBase = $item->order->milling?->getBasePriceFor($group) ?? 0;
-            $facadePricing = $item->facadeType?->resolvePricing($millingBase, 'm2')
-                ?? ['base' => $millingBase, 'unit' => 'm2'];
-            $rate = $facadePricing['base']
-                    + ($item->thickness?->price ?? 0)
-                    + ($item->order->coatingType?->price ?? 0);
+            $rate = $item->getRate($group);
+            $drillingCount = $item->getDrillingCount();
         @endphp
         <tr>
-            <td>{{ $item->facadeType->name_ru ?? '—' }}</td>
+            <td style="text-align: left;">{{ $item->facadeType->name_ru ?? '—' }}</td>
             <td>{{ $item->height }}</td>
             <td>{{ $item->width }}</td>
             <td>{{ $item->quantity }}</td>
-            <td>{{ number_format($area, 2, ',', ' ') }}</td>
+            <td>{{ number_format($area, 2) }}</td>
             <td>{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
-            <td>
-                @switch($item->coating_mode)
-                    @case(1)
-                        Да
-                        @break
-                    @case(2)
-                        Частич
-                        @break
-                    @default
-                        —
-                @endswitch
+            <td style="font-size: 9px;">
+                {{ $item->coating_mode == 1 ? 'Да' : ($item->coating_mode == 2 ? 'Част' : '—') }}
             </td>
-            <td>{{ number_format($rate, 2, ',', ' ') }}</td>
-            <td>{{ number_format($price, 2, ',', ' ') }}</td>
+            <td style="font-size: 9px;">
+                @if($item->drilling)
+                    <strong>{{ $item->drilling->name_ru }}</strong><br>
+                    ({{ $drillingCount }} шт/ф)
+                @else
+                    —
+                @endif
+            </td>
+            <td class="text-right">{{ number_format($rate, 1, ',', ' ') }}</td>
+            <td class="text-right font-bold">{{ number_format($price, 2, ',', ' ') }}</td>
         </tr>
     @endforeach
     </tbody>
     <tfoot>
-    <tr>
-        <td colspan="8" style="text-align:right"><strong>Итого:</strong></td>
-        <td>{{ number_format($order->calculateTotal($group), 2, ',', ' ') }}</td>
+    <tr style="background: #f0f0f0;">
+        <td colspan="9" class="text-right font-bold">ИТОГО К ОПЛАТЕ:</td>
+        <td class="text-right font-bold" style="font-size: 13px;">{{ number_format($order->calculateTotal($group), 2, ',', ' ') }}</td>
     </tr>
     </tfoot>
 </table>
 
 <div class="footer">
-    <strong>Пояснение:</strong> Ставка = базовая цена за м² + наценка за толщину + наценка за покрытие.
-    Доплата за двухсторонний окрас рассчитывается отдельно и добавляется к итоговой цене.
+    <strong>Пояснение:</strong> Ставка = базовая цена за м² + наценка за толщину + наценка за покрытие. <br>
+    Доплата за двухсторонний окрас и услуги сверления рассчитываются отдельно и включены в итоговую цену позиции.
 </div>
 </body>
 </html>
+
 

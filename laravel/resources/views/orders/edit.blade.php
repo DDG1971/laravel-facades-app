@@ -6,6 +6,18 @@
     <x-slot name="header">
         <h2 class="font-semibold text-lg">Редактирование заказа</h2>
     </x-slot>
+    @if ($errors->any())
+        <div class="mx-auto px-4 mt-4">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <strong class="font-bold">Ошибка!</strong>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
 
 
     <!-- 🔹 Форма -->
@@ -203,7 +215,20 @@
                         <td class="border">
                             <select name="items[{{ $index }}][thickness_id]"
                                     class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-white text-center text-sm truncate">
-                                @foreach($thicknesses as $thickness)
+
+                                {{-- 1. Сначала 19мм --}}
+                                @foreach($thicknesses->where('value', 19) as $thickness)
+                                    <option value="{{ $thickness->id }}"
+                                        {{ old("items.$index.thickness_id", $item->thickness_id) == $thickness->id ? 'selected' : '' }}>
+                                        {{ $thickness->label ?? $thickness->value }}
+                                    </option>
+                                @endforeach
+
+                                {{-- 2. Потом прочерк --}}
+                                <option value="" {{ old("items.$index.thickness_id", $item->thickness_id) == "" ? 'selected' : '' }}>—</option>
+
+                                {{-- 3. Все остальные --}}
+                                @foreach($thicknesses->where('value', '!=', 19) as $thickness)
                                     <option value="{{ $thickness->id }}"
                                         {{ old("items.$index.thickness_id", $item->thickness_id) == $thickness->id ? 'selected' : '' }}>
                                         {{ $thickness->label ?? $thickness->value }}
@@ -262,8 +287,19 @@
                         </select>
                     </td>
                     <td class="border">
-                        <select name="items[__INDEX__][thickness_id]"   class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
-                            @foreach($thicknesses as $thickness)
+                        <select name="items[__INDEX__][thickness_id]"
+                                class="w-full min-w-0 border border-gray-400 px-0.5 py-0 bg-blue-50 text-center text-sm truncate" disabled>
+
+                            {{-- 1. Сначала 19мм --}}
+                            @foreach($thicknesses->where('value', 19) as $thickness)
+                                <option value="{{ $thickness->id }}">{{ $thickness->label ?? $thickness->value }}</option>
+                            @endforeach
+
+                            {{-- 2. Потом прочерк --}}
+                            <option value="">—</option>
+
+                            {{-- 3. Все остальные --}}
+                            @foreach($thicknesses->where('value', '!=', 19) as $thickness)
                                 <option value="{{ $thickness->id }}">{{ $thickness->label ?? $thickness->value }}</option>
                             @endforeach
                         </select>

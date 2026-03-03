@@ -1,31 +1,30 @@
 <div class="overflow-x-auto">
     @php
-        // 🔹 priceGroup приходит из контроллера (например 'retail', 'dealer', 'private')
         $group = $priceGroup ?? 'retail';
     @endphp
 
-        <!-- 🔹 Шапка заказа -->
+        <!-- 🔹 Шапка заказа (оставляем, как была, она нужна для PDF) -->
     <div style="font-size: 14px; margin-bottom: 20px;">
-        <h2>Расчёт заказа №{{ $order->queue_number }}</h2>
-        <p><strong>Дата заказа:</strong> {{ $order->created_at->format('d.m.Y') }}</p>
-        <p><strong>№ заказа клиента:</strong> {{ $order->client_number ?? '—' }}</p>
-        <p><strong>Материал:</strong> {{ $order->material?->label ?? '—' }}</p>
-        <p><strong>Цвет:</strong> {{ $order->color?->name_ru ?? '—' }}</p>
-        <p><strong>Покрытие:</strong> {{ $order->coatingType?->label ?? '—' }}</p>
+        <h2 style="margin-bottom: 5px;">Расчёт заказа №{{ $order->queue_number }}</h2>
+        <p style="margin: 2px 0;"><strong>Дата заказа:</strong> {{ $order->created_at->format('d.m.Y') }}</p>
+        <p style="margin: 2px 0;"><strong>№ заказа клиента:</strong> {{ $order->client_order_number ?? '—' }}</p>
+        <p style="margin: 2px 0;"><strong>Цвет:</strong> {{ $order->colorCatalog->name_en ?? '' }} {{ $order->colorCode->code ?? '' }} {{ $order->coatingType->name ?? '' }}</p>
+        <p style="margin: 2px 0;"><strong>Фрезеровка:</strong> {{ $order->milling->name ?? '—' }}</p>
     </div>
 
-    <table class="min-w-full border border-gray-300 text-sm">
-        <thead class="bg-gray-100">
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px;" border="1">
+        <thead style="background-color: #f3f4f6;">
         <tr>
-            <th class="border px-2 py-1">Фасад</th>
-            <th class="border px-2 py-1">Высота</th>
-            <th class="border px-2 py-1">Ширина</th>
-            <th class="border px-2 py-1">Кол-во</th>
-            <th class="border px-2 py-1">Площадь, м²</th>
-            <th class="border px-2 py-1">Толщина</th>
-            <th class="border px-2 py-1">2-стор. окрас</th>
-            <th class="border px-2 py-1">Ставка (за м²)</th>
-            <th class="border px-2 py-1">Цена</th>
+            <th style="padding: 4px; width: 20%;">Фасад</th>
+            <th style="padding: 4px; width: 8%;">Выс.</th>
+            <th style="padding: 4px; width: 8%;">Шир.</th>
+            <th style="padding: 4px; width: 6%;">Кол.</th>
+            <th style="padding: 4px; width: 10%;">М²</th>
+            <th style="padding: 4px; width: 10%;">Толщ.</th>
+            <th style="padding: 4px; width: 8%;">Окрас 2с.</th>
+            <th style="padding: 4px; width: 12%;">Сверловка</th>
+            <th style="padding: 4px; width: 10%;">Ставка</th>
+            <th style="padding: 4px; width: 10%;">Цена</th>
         </tr>
         </thead>
         <tbody>
@@ -33,53 +32,41 @@
             @php
                 $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
                 $price = $item->calculatePrice($group);
-
-                $millingBase = $item->order->milling?->getBasePriceFor($group) ?? 0;
-                $facadePricing = $item->facadeType?->resolvePricing($millingBase, 'm2')
-                    ?? ['base' => $millingBase, 'unit' => 'm2'];
-                $rate = $facadePricing['base']
-                        + ($item->thickness?->price ?? 0)
-                        + ($item->order->coatingType?->price ?? 0);
+                $rate = $item->getRate($group);
+                $drillingCount = $item->getDrillingCount();
             @endphp
             <tr>
-                <td class="border px-2 py-1">{{ $item->facadeType->name_ru ?? '—' }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->height }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->width }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->quantity }}</td>
-                <td class="border px-2 py-1 text-center">{{ number_format($area, 2, ',', ' ') }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
-                <td class="border px-2 py-1 text-center">
-                    @switch($item->coating_mode)
-                        @case(1)
-                            Двухсторонний
-                            @break
-                        @case(2)
-                            Частичная
-                            @break
-                        @default
-                            —
-                    @endswitch
+                <td style="padding: 4px;">{{ $item->facadeType->name_ru ?? '—' }}</td>
+                <td style="padding: 4px; text-align: center;">{{ $item->height }}</td>
+                <td style="padding: 4px; text-align: center;">{{ $item->width }}</td>
+                <td style="padding: 4px; text-align: center;">{{ $item->quantity }}</td>
+                <td style="padding: 4px; text-align: center;">{{ number_format($area, 2) }}</td>
+                <td style="padding: 4px; text-align: center;">{{ $item->thickness?->label ?? '—' }}</td>
+                <td style="padding: 4px; text-align: center; font-size: 10px;">
+                    {{ $item->coating_mode == 1 ? '2-стор' : ($item->coating_mode == 2 ? 'Част' : '—') }}
                 </td>
-                <td class="border px-2 py-1 text-right">{{ number_format($rate, 2, ',', ' ') }}</td>
-                <td class="border px-2 py-1 text-right">{{ number_format($price, 2, ',', ' ') }}</td>
+                <td style="padding: 4px; text-align: center; font-size: 10px;">
+                    @if($item->drilling)
+                        <strong>{{ $item->drilling->name_ru }}</strong><br>
+                        {{ $drillingCount }} шт/ф.
+                    @else
+                        —
+                    @endif
+                </td>
+                <td style="padding: 4px; text-align: right;">{{ number_format($rate, 1) }}</td>
+                <td style="padding: 4px; text-align: right; font-weight: bold;">{{ number_format($price, 2) }}</td>
             </tr>
         @endforeach
         </tbody>
         <tfoot>
-        <tr class="font-bold bg-gray-50">
-            <td colspan="8" class="text-right px-2 py-1">Итого:</td>
-            <td class="border px-2 py-1 text-right">
-                {{ number_format($order->calculateTotal($group), 2, ',', ' ') }}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="9" class="px-2 py-1 text-xs text-gray-600">
-                <strong>Пояснение:</strong>
-                Ставка = базовая цена за м² + наценка за толщину + наценка за покрытие.
-                Доплата за двухсторонний окрас рассчитывается отдельно и добавляется к итоговой цене.
+        <tr style="background-color: #f9fafb; font-weight: bold;">
+            <td colspan="9" style="padding: 8px; text-align: right;">ИТОГО К ОПЛАТЕ:</td>
+            <td style="padding: 8px; text-align: right; color: #1d4ed8;">
+                {{ number_format($order->calculateTotal($group), 2) }}
             </td>
         </tr>
         </tfoot>
     </table>
 </div>
+
 

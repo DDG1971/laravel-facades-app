@@ -1,21 +1,21 @@
 <div class="overflow-x-auto">
     @php
-        // 🔹 группа цен приходит из контроллера
         $group = $priceGroup ?? 'retail';
     @endphp
 
-    <table class="min-w-full border border-gray-300 text-sm">
+    <table class="min-w-full border border-gray-300 text-sm table-fixed"> {{-- Добавил table-fixed для строгого контроля ширины --}}
         <thead class="bg-gray-100">
         <tr>
-            <th class="border px-2 py-1">Фасад</th>
-            <th class="border px-2 py-1">Высота</th>
-            <th class="border px-2 py-1">Ширина</th>
-            <th class="border px-2 py-1">Кол-во</th>
-            <th class="border px-2 py-1">Площадь, м²</th>
-            <th class="border px-2 py-1">Толщина</th>
-            <th class="border px-2 py-1">2-стор. окрас</th>
-            <th class="border px-2 py-1">Ставка (за м²)</th>
-            <th class="border px-2 py-1">Цена</th>
+            <th class="border px-2 py-1 w-[20%] text-left">Фасад</th> {{-- Увеличили --}}
+            <th class="border px-2 py-1 w-[8%]">Выс.</th>
+            <th class="border px-2 py-1 w-[8%]">Шир.</th>
+            <th class="border px-2 py-1 w-[6%]">Кол.</th>
+            <th class="border px-2 py-1 w-[10%]">Площадь</th>
+            <th class="border px-2 py-1 w-[10%]">Толщ.</th>
+            <th class="border px-2 py-1 w-[8%] text-xs">Окрас 2с.</th> {{-- Уменьшили --}}
+            <th class="border px-2 py-1 w-[12%]">Сверловка</th>
+            <th class="border px-2 py-1 w-[10%]">Ставка</th> {{-- Уменьшили --}}
+            <th class="border px-2 py-1 w-[10%]">Цена</th>
         </tr>
         </thead>
         <tbody>
@@ -23,69 +23,49 @@
             @php
                 $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
                 $price = $item->calculatePrice($group);
-
-                $millingBase = $item->order->milling?->getBasePriceFor($group) ?? 0;
-                $facadePricing = $item->facadeType?->resolvePricing($millingBase, 'm2')
-                    ?? ['base' => $millingBase, 'unit' => 'm2'];
-                $rate = $facadePricing['base']
-                        + ($item->thickness?->price ?? 0)
-                        + ($item->order->coatingType?->price ?? 0);
+                $rate = $item->getRate($group);
+                $drillingCount = $item->getDrillingCount();
             @endphp
-            <tr>
-                <td class="border px-2 py-1">{{ $item->facadeType->name_ru ?? '—' }}</td>
+            <tr class="hover:bg-gray-50">
+                <td class="border px-2 py-1 break-words">{{ $item->facadeType->name_ru ?? '—' }}</td> {{-- break-words поможет, если имя очень длинное --}}
                 <td class="border px-2 py-1 text-center">{{ $item->height }}</td>
                 <td class="border px-2 py-1 text-center">{{ $item->width }}</td>
                 <td class="border px-2 py-1 text-center">{{ $item->quantity }}</td>
                 <td class="border px-2 py-1 text-center">{{ number_format($area, 2, ',', ' ') }}</td>
-                <td class="border px-2 py-1 text-center">{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
-                <td class="border px-2 py-1 text-center">
+                <td class="border px-2 py-1 text-center text-xs">{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
+                <td class="border px-2 py-1 text-center text-[10px] leading-tight">
                     @switch($item->coating_mode)
-                        @case(1)
-                            Двухсторонний
-                            @break
-                        @case(2)
-                            Частичная
-                            @break
-                        @default
-                            —
+                        @case(1) 2-стор @break
+                        @case(2) Част @break
+                        @default —
                     @endswitch
                 </td>
-                <td class="border px-2 py-1 text-right">{{ number_format($rate, 2, ',', ' ') }}</td>
-                <td class="border px-2 py-1 text-right">{{ number_format($price, 2, ',', ' ') }}</td>
+                <td class="border px-2 py-1 text-center">
+                    @if($item->drilling)
+                        <div class="text-[10px] leading-none">
+                            <span class="font-bold">{{ $item->drilling->name_ru }}</span><br>
+                            <span class="text-blue-600 italic">{{ $drillingCount }} шт/ф.</span>
+                        </div>
+                    @else
+                        <span class="text-gray-400">—</span>
+                    @endif
+                </td>
+                <td class="border px-2 py-1 text-right text-xs">{{ number_format($rate, 1, ',', ' ') }}</td> {{-- Сократил до 1 знака после запятой для экономии места --}}
+                <td class="border px-2 py-1 text-right font-bold">{{ number_format($price, 2, ',', ' ') }}</td>
             </tr>
         @endforeach
         </tbody>
         <tfoot>
-        <tr class="font-bold bg-gray-50">
-            <td colspan="8" class="text-right px-2 py-1">Итого:</td>
-            <td class="border px-2 py-1 text-right">
+        <tr class="font-bold bg-gray-50 text-base">
+            <td colspan="9" class="text-right px-4 py-2">ИТОГО К ОПЛАТЕ:</td>
+            <td class="border px-2 py-2 text-right text-blue-700">
                 {{ number_format($order->calculateTotal($group), 2, ',', ' ') }}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="9" class="px-2 py-1 text-xs text-gray-600">
-                <strong>Пояснение:</strong>
-                Ставка = базовая цена за м² + наценка за толщину + наценка за покрытие.
-                Доплата за двухсторонний окрас рассчитывается отдельно и добавляется к итоговой цене.
             </td>
         </tr>
         </tfoot>
     </table>
 </div>
 
-<!-- 🔹 Переключатель прайса -->
-<div class="mt-4">
-    <form method="GET" action="">
-        <label for="price_group" class="mr-2 font-medium">Группа цен:</label>
-        <select id="price_group" name="price_group"
-                onchange="this.form.submit()"
-                class="border rounded px-2 py-1 text-sm">
-            <option value="retail"  {{ $group === 'retail'  ? 'selected' : '' }}>Розница</option>
-            <option value="dealer"  {{ $group === 'dealer'  ? 'selected' : '' }}>Дилер</option>
-            <option value="private" {{ $group === 'private' ? 'selected' : '' }}>Частный</option>
-        </select>
-    </form>
-</div>
 
 
 

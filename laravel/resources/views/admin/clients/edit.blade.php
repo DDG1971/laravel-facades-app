@@ -30,6 +30,12 @@
                 <input type="text" name="phone" value="{{ $client->phone }}"
                        class="w-full border rounded px-3 py-2">
             </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Company Email</label>
+                <input type="email" name="email" value="{{ $client->email }}"
+                       class="w-full border rounded px-3 py-2">
+                <p class="text-xs text-gray-500 mt-1 italic">Это общая почта организации для документов.</p>
+            </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700">Address</label>

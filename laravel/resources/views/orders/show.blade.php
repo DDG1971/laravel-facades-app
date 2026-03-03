@@ -57,17 +57,16 @@
                 <th class="border px-2 py-1 w-16">Высота</th>
                 <th class="border px-2 py-1 w-16">Ширина</th>
                 <th class="border px-2 py-1 w-12">Кол-во</th>
+                <th class="border px-2 py-1 w-16">2‑х сторон. окрас</th>
                 <th class="border px-2 py-1 w-12">Толщина</th>
                 <th class="border px-2 py-1 w-20 truncate">Сверловка</th>
-                <th class="border px-2 py-1 w-16">2‑х сторон. окрас</th>
                 <th class="border px-2 py-1 w-20 text-center">Квадратура</th>
-                <th class="border px-2 py-1 w-20 text-center">Ставка за м²</th>
-                <th class="border px-2 py-1 w-20 text-center">Цена</th>
                 <th class="border px-2 py-1 w-32 truncate">Примечания</th>
             </tr>
             </thead>
             <tbody>
           @foreach($order->items as $item)
+
                 @php
                     $area = ($item->height * $item->width / 1_000_000) * $item->quantity;
                     $millingBase = $order->milling?->getBasePriceFor('retail') ?? 0;
@@ -83,28 +82,31 @@
                     <td class="border px-2 py-1 text-center">{{ $item->height }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->width }}</td>
                     <td class="border px-2 py-1 text-center">{{ $item->quantity }}</td>
-                    <td class="border px-2 py-1 text-center">
-                        {{ $item->thickness->label ?? $item->thickness->value ?? '—' }}
-                    </td>
+             <td class="border px-2 py-1 text-center">
+                 @switch($item->coating_mode)
+                     @case(1)
+                         Да
+                         @break
+                     @case(2)
+                         Частич
+                         @break
+                     @default — @endswitch
+             </td>
+
+             <td class="border px-2 py-1 text-center">
+                 @if($item->thickness_id && $item->thickness)
+                     {{ $item->thickness->label ?? $item->thickness->value }}
+                 @else
+                     —
+                 @endif
+             </td>{{--<td class="border text-[10px] text-red-500">
+                 ID: {{ $item->thickness_id ?? 'NULL' }}
+             </td>--}}
+
                     <td class="border px-2 py-1 truncate">{{ $item->drilling->name_ru ?? '—' }}</td>
-                    <td class="border px-2 py-1 text-center">
-                        @switch($item->coating_mode)
-                            @case(1)
-                                Да
-                                @break
-                            @case(2)
-                                Частич
-                                @break
-                            @default — @endswitch
-                    </td>
+
                     <td class="border px-2 py-1 text-center">
                         {{ number_format($area, 2, ',', ' ') }}
-                    </td>
-                    <td class="border px-2 py-1 text-center">
-                        {{ number_format($unitPrice, 1, ',', ' ') }}
-                    </td>
-                    <td class="border px-2 py-1 text-center">
-                        {{ number_format($finalPrice, 1, ',', ' ') }}
                     </td>
                     <td class="border px-2 py-1 truncate">{{ $item->notes ?? '—' }}</td>
                 </tr>
@@ -113,10 +115,8 @@
             <tfoot>
             <tr>
                 <td colspan="7" class="border px-2 py-1 text-right font-bold">Итого:</td>
-                <td class="border px-2 py-1 text-center">{{ number_format($order->total_square, 2, ',', ' ') }}</td>
-                <td></td>
-                <td class="border px-2 py-1 text-center font-bold">{{ number_format($order->calculateTotal('retail'), 1, ',', ' ') }}</td>
-                <td></td>
+                <td class="border px-2 py-1 text-center font-bold">{{ number_format($order->total_square, 2, ',', ' ') }}</td>
+                <td class="border"></td> {{-- Пустая ячейка под примечаниями --}}
             </tr>
             </tfoot>
         </table>

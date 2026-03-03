@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CoatingTypeController;
 use App\Http\Controllers\ColorCatalogController;
 use App\Http\Controllers\ColorCodeController;
+use App\Http\Controllers\DrillingController;
 use App\Http\Controllers\FacadeTypeController;
 use App\Http\Controllers\MillingController;
 use App\Http\Controllers\ProfileController;
@@ -52,7 +53,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Админка
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/pending-users', [AdminController::class, 'pending'])->name('admin.pending');
     Route::post('/admin/approve/{user}', [AdminController::class, 'approve'])->name('admin.approve');
@@ -69,6 +70,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('/admin/color_codes', ColorCodeController::class);
     Route::resource('/admin/coating-types', CoatingTypeController::class);
     Route::resource('/admin/thicknesses', ThicknessController::class);
+    Route::resource('/admin/drillings', DrillingController::class);
 
     // 🔹 заказы для админа
     Route::get('/admin/orders', [OrderController::class, 'index']) ->name('admin.orders.index');
@@ -77,7 +79,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // расчеты для админа
     Route::get('/orders/{order}/manage', [OrderController::class, 'manage']) ->name('orders.manage');
     // изм.статуса для админа
-    Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']) ->name('orders.updateStatus');
+    Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus']) ->name('orders.updateStatus');
+    Route::post('/orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.updatePayment');
+
 
     Route::get('/orders/{order}/export-pdf', [OrderController::class, 'exportClientPdf']) ->name('orders.export.pdf');
     Route::post('/orders/{order}/send-calculation', [OrderController::class, 'sendCalculation']) ->name('orders.send.calculation');
@@ -92,6 +96,17 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders', [OrderController::class, 'indexClient'])->name('orders.index');
 
+});
+
+// Дашборд менеджера
+Route::middleware(['auth', 'role:manager'])->group(function () {
+    // Главная страница менеджера
+    Route::get('/manager/dashboard', [\App\Http\Controllers\ManagerDashboardController::class, 'index'])
+        ->name('manager.dashboard');
+
+    // Список заказов для менеджера (используем ТОТ ЖЕ контроллер и метод)
+    Route::get('/manager/orders', [OrderController::class, 'index'])
+        ->name('manager.orders.index');
 });
 
 require __DIR__.'/auth.php';

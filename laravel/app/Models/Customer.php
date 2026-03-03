@@ -10,6 +10,7 @@ class Customer extends Model
         'company_name',
         'contact_person',
         'phone',
+        'email',
         'address',
         'contract_number',
     ];

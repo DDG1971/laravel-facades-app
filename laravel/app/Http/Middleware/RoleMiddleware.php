@@ -13,12 +13,13 @@ class RoleMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next,  $role)
+    public function handle(Request $request, Closure $next, ...$roles) // ...$roles соберет все аргументы в массив
     {
-        if ($request->user() && $request->user()->role === $role) {
+        if ($request->user() && in_array($request->user()->role, $roles)) {
             return $next($request);
         }
 
-        abort(403);
+        abort(403, 'Доступ запрещен');
     }
+
 }

@@ -5,16 +5,25 @@
 <link rel="stylesheet" href="{{ asset('build/' . $manifest['resources/css/app.css']['file']) }}">
 <script src="{{ asset('build/' . $manifest['resources/js/app.js']['file']) }}" defer></script>--}}
 @php
-    $manifestPath = public_path('build/.vite/manifest.json');
-    $manifest = json_decode(file_get_contents($manifestPath), true);
+    // Убираем .vite/ из пути, так как теперь файл лежит в корне build/
+    $manifestPath = public_path('build/manifest.json');
 
-    $js = $manifest['resources/js/app.js']['file'];
-    $cssFiles = $manifest['resources/js/app.js']['css'] ?? [];
+    // Проверка на существование файла, чтобы страница не падала с ошибкой, если билда нет
+    if (file_exists($manifestPath)) {
+        $manifest = json_decode(file_get_contents($manifestPath), true);
+        $js = $manifest['resources/js/app.js']['file'] ?? '';
+        $cssFiles = $manifest['resources/js/app.js']['css'] ?? [];
+    } else {
+        $js = '';
+        $cssFiles = [];
+    }
 @endphp
 
-@foreach ($cssFiles as $css)
-    <link rel="stylesheet" href="{{ asset('build/' . $css) }}">
-@endforeach
+@if($js)
+    @foreach ($cssFiles as $css)
+        <link rel="stylesheet" href="{{ asset('build/' . $css) }}">
+    @endforeach
 
-<script src="{{ asset('build/' . $js) }}" defer></script>
+    <script src="{{ asset('build/' . $js) }}" defer></script>
+@endif
 
