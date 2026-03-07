@@ -14,7 +14,7 @@ class FacadeTypeController extends Controller
     {
         $facadeTypes = FacadeType::all();
 
-        return view('facade-Types.index', compact('facadeTypes'));
+        return view('facade-types.index', compact('facadeTypes'));
 
     }
 
@@ -23,7 +23,7 @@ class FacadeTypeController extends Controller
      */
     public function create()
     {
-        return view('facade-Types.create');
+        return view('facade-types.create');
     }
 
     /**
@@ -50,7 +50,7 @@ class FacadeTypeController extends Controller
      */
     public function show(FacadeType $facadeType)
     {
-        return view('facade-Types.show', compact('facadeType'));
+        return view('facade-types.show', compact('facadeType'));
     }
 
     /**
@@ -58,7 +58,7 @@ class FacadeTypeController extends Controller
      */
     public function edit(FacadeType $facadeType)
     {
-        return view('facade-Types.edit', compact('facadeType'));
+        return view('facade-types.edit', compact('facadeType'));
     }
 
     /**
