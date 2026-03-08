@@ -132,21 +132,62 @@
                 Скачать PDF для клиента
             </a>
         </div>
-
-        <!-- 🔹 Отправка клиенту -->
+        <!-- 🔹 Управление уведомлениями -->
         <form action="{{ route('orders.send.calculation', $order) }}" method="POST">
+        <div class="bg-white shadow rounded-lg p-6 border-l-4 border-green-500 mb-6">
+            <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span>📩</span> Настройка получателей расчёта
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Секция Менеджера (Автора заказа) -->
+                <div class="p-3 bg-gray-50 rounded-md border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Менеджер: {{ $order->user->name }}</p>
+                    <div class="flex flex-col gap-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="notify_manager" value="1" {{ $order->user->notify_manager ? 'checked' : '' }}
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">📧 На Email ({{ $order->user->email }})</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="notify_manager_tg" value="1" {{ $order->user->notify_manager_tg ? 'checked' : '' }}
+                            class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
+                            <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Секция Руководителя -->
+                <div class="p-3 bg-gray-50 rounded-md border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Клиент: {{ $order->customer->company_name }}</p>
+                    <div class="flex flex-col gap-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="notify_owner" value="1" {{ $order->customer->notify_owner ? 'checked' : '' }}
+                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">📧 На Email ({{ $order->customer->email }})</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="notify_owner_tg" value="1" {{ $order->customer->notify_owner_tg ? 'checked' : '' }}
+                            class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
+                            <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔹 Форма отправки (оберни кнопку и чекбоксы выше в один тег <form>) -->
+
             @csrf
             <input type="hidden" name="price_group" value="{{ $priceGroup }}">
-            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                Отправить расчёт клиенту
+
+            <!-- Перемести чекбоксы ВНУТРЬ этой формы или используй атрибут form="id" -->
+
+            <button type="submit" class="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-black rounded shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-sm">
+                🚀 Сохранить настройки и отправить расчет
             </button>
         </form>
 
-        <!-- 🔹 Управление статусом -->
-        {{--<div class="bg-white shadow rounded p-4">
-            <h3 class="font-bold mb-2">Статус заказа</h3>
-            @include('orders.partials.status-form', ['order' => $order, 'statuses' => $statuses])
-        </div>--}}
     </div>
 </x-app-layout>
 

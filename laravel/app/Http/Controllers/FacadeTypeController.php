@@ -35,7 +35,7 @@ class FacadeTypeController extends Controller
             'name_en' => 'required|string|max:255|unique:facade_types,name_en',
             'name_ru' => 'required|string|max:255|unique:facade_types,name_ru',
             'pricing_mode' => 'required|in:inherit,set_base,percent_add,none',
-            'pricing_value' => 'numeric|min:0',
+            'pricing_value' => 'nullable|numeric|min:0',
             'unit_mode' => 'required|in:inherit,piece,m2,lm',
         ]);
 
@@ -70,7 +70,7 @@ class FacadeTypeController extends Controller
             'name_en' => 'required|string|max:255|unique:facade_types,name_en,' . $facadeType->id,
             'name_ru' => 'required|string|max:255|unique:facade_types,name_ru,' . $facadeType->id,
             'pricing_mode' => 'required|in:inherit,set_base,percent_add,none',
-            'pricing_value' => 'numeric|min:0',
+            'pricing_value' => 'nullable|numeric|min:0',
             'unit_mode' => 'required|in:inherit,piece,m2,lm',
         ]);
 

@@ -64,17 +64,22 @@ class MillingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request,  Milling $milling)
+    public function update(Request $request, Milling $milling)
     {
         $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            // Проверка на уникальность name_en и code, исключая текущую запись
+            'name_en' => 'required|string|max:255|unique:millings,name_en,' . $milling->id,
+            'code' => 'required|string|unique:millings,code,' . $milling->id,
             'price_retail' => 'nullable|numeric',
             'price_dealer' => 'nullable|numeric',
             'price_private' => 'nullable|numeric',
-            ]);
+        ]);
+
         $milling->update($validated);
 
         return redirect()->route('millings.index')
-            ->with('success', 'Фрезеровка обновлена');
+            ->with('success', 'Фрезеровка полностью обновлена');
     }
 
     /**

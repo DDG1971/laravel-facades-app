@@ -13,6 +13,9 @@ class Customer extends Model
         'email',
         'address',
         'contract_number',
+        'notify_owner',
+        'telegram_chat_id',
+        'notify_owner_tg',
     ];
 
     //protected $with = ['users', 'orders'];

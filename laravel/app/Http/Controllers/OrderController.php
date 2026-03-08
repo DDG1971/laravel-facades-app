@@ -650,16 +650,19 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
+        // 1. Обновляем данные в базе
         $order->update([
             'status_id' => $request->input('status_id'),
             'date_status' => now(),
         ]);
 
-        //  кидаю задачу в очередь
+        // 2. Просто кидаем задачу в очередь.
+        // Job сам внутри себя проверит статус, галочки и отправит ТГ.
         \App\Jobs\SendOrderUpdateNotification::dispatch($order);
 
+        // 3. Ответ для AJAX (чтобы на фронте всё обновилось)
         if ($request->ajax()) {
-            $order->load('status'); // Нужно только для ответа в JS
+            $order->load('status');
             return response()->json([
                 'success' => true,
                 'status' => $order->status->label,
@@ -667,6 +670,7 @@ class OrderController extends Controller
                 'date_status' => $order->date_status->format('d.m.Y'),
             ]);
         }
+
         return redirect()->back()->with('success', 'Статус заказа обновлён.');
     }
 
@@ -712,36 +716,47 @@ class OrderController extends Controller
 
 
     public function sendCalculation(Order $order, Request $request)
-    {  //$pdf = Pdf::loadHTML('<h1>Тестовый PDF</h1>');
+    {
+        // 1. Обновляем флаги в БД (сохраняем выбор из чекбоксов)
+        // Метод has('name') вернет true, если галочка стоит
+        $order->user->update(['notify_manager' => $request->has('notify_manager')]);
+        $order->customer->update(['notify_owner' => $request->has('notify_owner')]);
 
+        // 2. Подгружаем всё необходимое для письма
         $order->load([
-            'user',
-            'customer',
-            'colorCatalog',
-            'colorCode',
-            'coatingType',
-            'milling',
-            'items.facadeType',
-            'items.thickness',
-            'items.drilling'
+            'user', 'customer', 'colorCatalog', 'colorCode',
+            'coatingType', 'milling', 'items.facadeType',
+            'items.thickness', 'items.drilling'
         ]);
 
+        // 3. Определяем группу цен
         $priceGroup = $request->input('price_group', 'retail');
-        $allowed = ['retail', 'dealer', 'private'];
-        if (!in_array($priceGroup, $allowed, true)) {
+        if (!in_array($priceGroup, ['retail', 'dealer', 'private'])) {
             $priceGroup = 'retail';
         }
 
-        $recipient = $order->user?->email;
+        // 4. Собираем массив реальных email-адресов
+        $recipients = [];
 
-        if (empty($recipient)) {
-            return back()->with('error', 'У клиента не найден ни один пользователь с email.');
+        if ($order->user->notify_manager && !empty($order->user->email)) {
+            $recipients[] = $order->user->email;
         }
-        ///Mail::send(new CalculationMail($order, $priceGroup));
-        // Mail::to($recipient)->send(new CalculationMail($order, $priceGroup));
-        Mail::to($recipient)->queue(new CalculationMail($order, $priceGroup));
 
-        return back()->with('success', "Расчёт отправлен на {$recipient}!");
+        if ($order->customer->notify_owner && !empty($order->customer->email)) {
+            $recipients[] = $order->customer->email;
+        }
+
+        // 5. Проверка: если никто не выбран или email-ы пустые
+        if (empty($recipients)) {
+            return back()->with('error', 'Получатели не выбраны или у них не указан Email.');
+        }
+
+        // 6. Отправка (используем массив адресов)
+        // Метод array_unique на случай, если email руководителя и менеджера совпали
+        Mail::to(array_unique($recipients))->queue(new CalculationMail($order, $priceGroup));
+
+        $list = implode(', ', $recipients);
+        return back()->with('success', "Расчёт успешно поставлен в очередь на отправку: {$list}");
     }
 
     public function updatePayment(Request $request, Order $order): \Illuminate\Http\RedirectResponse
@@ -772,6 +787,20 @@ class OrderController extends Controller
 
         return back()->with('success', 'Payment of $' . $request->amount . ' posted!');
     }
+
+    private function dispatchTelegram($chatId, $text)
+    {
+        try {
+            \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text'    => $text,
+                'parse_mode' => 'Markdown'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Ошибка отправки в Telegram: " . $e->getMessage());
+        }
+    }
+
 
 
 }
