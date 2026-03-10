@@ -35,8 +35,8 @@
                 <td class="border px-2 py-1 text-center text-xs">{{ $item->thickness?->label ?? $item->thickness?->value ?? '—' }}</td>
                 <td class="border px-2 py-1 text-center text-[10px] leading-tight">
                     @switch($item->coating_mode)
-                        @case(1) 2-стор @break
-                        @case(2) Част @break
+                        @case(1) 2стор.окр @break
+                        @case(2) Частич. @break
                         @default —
                     @endswitch
                 </td>

@@ -273,43 +273,58 @@ class OrderController extends Controller
             try {
                 $order->load(['customer', 'user', 'colorCode.colorCatalog', 'coatingType', 'milling']);
 
+                // 1. Собираем список получателей (Админ из .env + все Менеджеры с привязанным ТГ)
+                $adminId = config('services.telegram.admin_id');
+                $managerIds = \App\Models\User::where('role', 'manager') // убедись, что роль называется 'manager'
+                ->whereNotNull('telegram_chat_id')
+                    ->pluck('telegram_chat_id')
+                    ->toArray();
 
+                // Объединяем и убираем дубликаты
+                $allRecipients = array_unique(array_filter(array_merge([$adminId], $managerIds)));
+
+                // Подготовка данных сообщения (один раз)
                 $companyName = $order->customer->company_name ?? 'Частное лицо';
                 $managerPhone = $order->user->phone ?? 'нет тел.';
-                // Собираем название цвета динамически
-                $catalogName = $order->colorCode->colorCatalog->name ?? 'Цвет'; // RAL, NCS и т.д.
+                $catalogName = $order->colorCode->colorCatalog->name ?? 'Цвет';
                 $colorVal = $order->colorCode->code ?? '???';
                 $coating = $order->coatingType->name ?? '';
-
                 $colorFull = "{$catalogName} {$colorVal} {$coating}";
+                $totalQty = collect($request->input('items', []))->sum('quantity');
 
-                \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
-                    'chat_id' => config('services.telegram.admin_id'),
-                    'text' => "🚀 **Новый заказ #{$order->queue_number}**\n" .
-                        "🏢 **Компания:** {$companyName}\n" .
-                        "👤 **Менеджер:** {$order->user->name} (`{$managerPhone}`)\n" .
-                        "📑 **Док. клиента:** `" . ($order->client_order_number ?: 'б/н') . "`\n\n" .
-                        "🎨 **Спецификация:**\n" .
-                        "📦 **Материал:** {$order->material}\n" .
-                        "🌈 **Цвет:** `{$colorFull}`\n" .
-                        "🪵 **Фрезеровка:**\n" . ($order->milling->name ?? 'Не указана') . "\n\n" .
-                        "📊 **Итого:**\n" .
-                        "🔢 **Кол-во:** " . collect($request->input('items', []))->sum('quantity') . " шт.\n" .
-                        "📐 **Площадь:** " . number_format($totalSquare, 2) . " м²",
-                    'parse_mode' => 'Markdown'
-                ]);
+                $messageText = "🚀 **Новый заказ #{$order->queue_number}**\n" .
+                    "🏢 **Компания:** {$companyName}\n" .
+                    "👤 **Менеджер:** {$order->user->name} (`{$managerPhone}`)\n" .
+                    "📑 **Док. клиента:** `" . ($order->client_order_number ?: 'б/н') . "`\n\n" .
+                    "🎨 **Спецификация:**\n" .
+                    "📦 **Материал:** {$order->material}\n" .
+                    "🌈 **Цвет:** `{$colorFull}`\n" .
+                    "🪵 **Фрезеровка:**\n" . ($order->milling->name ?? 'Не указана') . "\n\n" .
+                    "📊 **Итого:**\n" .
+                    "🔢 **Кол-во:** {$totalQty} шт.\n" .
+                    "📐 **Площадь:** " . number_format($totalSquare, 2) . " м²";
 
-                // Отправляем файл чертежа, если он есть
-                if ($order->attachment_path) {
-                    \Telegram\Bot\Laravel\Facades\Telegram::sendDocument([
-                        'chat_id' => config('services.telegram.admin_id'),
-                        'document' => \Telegram\Bot\FileUpload\InputFile::create(
-                            storage_path('app/public/' . $order->attachment_path),
-                            'Чертеж_Заказа_#' . $order->queue_number . '.pdf'
-                        ),
-                        'caption' => "📎 Файл к заказу #{$order->queue_number}"
+                // 2. РАССЫЛКА ВСЕМ ПОЛУЧАТЕЛЯМ
+                foreach ($allRecipients as $chatId) {
+                    \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => $messageText,
+                        'parse_mode' => 'Markdown'
                     ]);
+
+                    // Отправляем файл чертежа, если он есть
+                    if ($order->attachment_path) {
+                        \Telegram\Bot\Laravel\Facades\Telegram::sendDocument([
+                            'chat_id' => $chatId,
+                            'document' => \Telegram\Bot\FileUpload\InputFile::create(
+                                storage_path('app/public/' . $order->attachment_path),
+                                'Чертеж_Заказа_#' . $order->queue_number . '.pdf'
+                            ),
+                            'caption' => "📎 Файл к заказу #{$order->queue_number}"
+                        ]);
+                    }
                 }
+
             } catch (\Exception $e) {
                 \Log::error("Ошибка телеграма: " . $e->getMessage());
             }
