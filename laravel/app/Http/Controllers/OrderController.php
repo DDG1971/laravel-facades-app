@@ -732,46 +732,39 @@ class OrderController extends Controller
 
     public function sendCalculation(Order $order, Request $request)
     {
-        // 1. Обновляем флаги в БД (сохраняем выбор из чекбоксов)
-        // Метод has('name') вернет true, если галочка стоит
-        $order->user->update(['notify_manager' => $request->has('notify_manager')]);
-        $order->customer->update(['notify_owner' => $request->has('notify_owner')]);
-
-        // 2. Подгружаем всё необходимое для письма
-        $order->load([
-            'user', 'customer', 'colorCatalog', 'colorCode',
-            'coatingType', 'milling', 'items.facadeType',
-            'items.thickness', 'items.drilling'
+        // 1. Обновляем флаги в БД (Email + TG)
+        $order->user->update([
+            'notify_manager' => $request->has('notify_manager'),
+            'notify_manager_tg' => $request->has('notify_manager_tg')
+        ]);
+        $order->customer->update([
+            'notify_owner' => $request->has('notify_owner'),
+            'notify_owner_tg' => $request->has('notify_owner_tg')
         ]);
 
-        // 3. Определяем группу цен
-        $priceGroup = $request->input('price_group', 'retail');
-        if (!in_array($priceGroup, ['retail', 'dealer', 'private'])) {
-            $priceGroup = 'retail';
-        }
+        // 2. Подгружаем связи
+        $order->load(['user', 'customer', 'status', 'colorCode.colorCatalog', 'coatingType', 'milling', 'items']);
 
-        // 4. Собираем массив реальных email-адресов
+        // 3. Логика Email
         $recipients = [];
+        if ($order->user->notify_manager && !empty($order->user->email)) $recipients[] = $order->user->email;
+        if ($order->customer->notify_owner && !empty($order->customer->email)) $recipients[] = $order->customer->email;
 
-        if ($order->user->notify_manager && !empty($order->user->email)) {
-            $recipients[] = $order->user->email;
+        if (!empty($recipients)) {
+            $priceGroup = in_array($request->input('price_group'), ['retail', 'dealer', 'private'])
+                ? $request->input('price_group') : 'retail';
+            Mail::to(array_unique($recipients))->queue(new CalculationMail($order, $priceGroup));
         }
 
-        if ($order->customer->notify_owner && !empty($order->customer->email)) {
-            $recipients[] = $order->customer->email;
-        }
+        // 4. ЗАПУСК TELEGRAM (вынесли из-под условия Email)
+        // Теперь ТГ уйдет, даже если Email пустой
+        dispatch(new \App\Jobs\SendOrderUpdateNotification($order));
 
-        // 5. Проверка: если никто не выбран или email-ы пустые
-        if (empty($recipients)) {
-            return back()->with('error', 'Получатели не выбраны или у них не указан Email.');
-        }
+        $statusMessage = !empty($recipients)
+            ? "Расчёт отправлен на Email (" . implode(', ', $recipients) . ") и в Telegram."
+            : "Расчёт отправлен в Telegram.";
 
-        // 6. Отправка (используем массив адресов)
-        // Метод array_unique на случай, если email руководителя и менеджера совпали
-        Mail::to(array_unique($recipients))->queue(new CalculationMail($order, $priceGroup));
-
-        $list = implode(', ', $recipients);
-        return back()->with('success', "Расчёт успешно поставлен в очередь на отправку: {$list}");
+        return back()->with('success', $statusMessage);
     }
 
     public function updatePayment(Request $request, Order $order): \Illuminate\Http\RedirectResponse
