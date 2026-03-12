@@ -123,7 +123,18 @@
                     </colgroup>
                     <tbody>
                     @forelse($orders as $order)
-                        <tr class="hover:bg-gray-50">
+                        <tr data-order-id="{{ $order->id }}"
+                            class="transition-colors duration-300 hover:bg-opacity-80
+        @switch($order->status->name)
+            @case('new') bg-gray-300 text-gray-900 @break
+            @case('received') bg-yellow-500 text-black @break
+            @case('in_progress') bg-blue-500 text-white @break
+            @case('ready') bg-green-500 text-white @break
+            @case('shipped') bg-green-300 text-gray-800 @break
+            @case('completed') bg-purple-600 text-white @break
+            @case('cancelled') bg-red-500 text-white @break
+            @default bg-white text-gray-900
+        @endswitch">
                             <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
                             <td class="border px-2 py-1 text-center">{{ $order->client_order_number }}</td>
                             <td class="border px-2 py-1 text-center">
@@ -160,7 +171,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="border px-2 py-1 text-center">
+                            <td id="date-status-{{ $order->id }}" class="border px-2 py-1 text-center">
                                 {{ $order->date_status ? \Carbon\Carbon::parse($order->date_status)->format('d.m.Y') : '—' }}
                             </td>
                             <td class="border px-2 py-1 space-x-2 text-center">
