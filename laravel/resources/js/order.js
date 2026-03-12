@@ -190,18 +190,9 @@ if (document.getElementById('order-items-body')) {
     document.addEventListener('input', recalcTotals);
 }
 
-window.updateStatus = function(orderId, statusId) {
-    console.log('updateStatus called', orderId, statusId);
-
-    // 1. Проверка токена (чтобы не упасть, если его нет)
+window.updateStatus = function (orderId, statusId) {
     const tokenElement = document.querySelector('meta[name="csrf-token"]');
-    if (!tokenElement) {
-        console.error('CSRF token not found!');
-        return;
-    }
-
-    // 2. Оптимистичное обновление (по желанию):
-    // Можно добавить лоадер на строку здесь, чтобы пользователь видел, что процесс пошел.
+    if (!tokenElement) return;
 
     fetch(`/orders/${orderId}/status`, {
         method: 'POST',
@@ -210,118 +201,96 @@ window.updateStatus = function(orderId, statusId) {
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status_id: statusId })
+        body: JSON.stringify({status_id: statusId})
     })
-        .then(res => {
-            if (!res.ok) throw new Error('Network response was not ok');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            console.log('server response', data);
             if (data.success) {
-                // Обновляем дату (безопасно)
                 const dateCell = document.getElementById(`date-status-${orderId}`);
-                if (dateCell) {
-                    dateCell.textContent = data.date_status;
-                }
+                if (dateCell) dateCell.textContent = data.date_status;
 
-                // 1. Находим строку
                 const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
                 if (row) {
-                    // 2. Новая карта цветов (яркие и читаемые)
                     const statusMap = {
                         'new': ['bg-gray-300', 'text-gray-900'],
-                        'received': ['bg-yellow-500', 'text-black'],     // В очереди (Желтый)
-                        'in_progress': ['bg-blue-500', 'text-white'],       // В работе (Синий)
-                        'ready': ['bg-green-500', 'text-white'],      // Готово (Зеленый)
-                        'shipped': ['bg-green-300', 'text-gray-900'],   // Отгружено (Светло-зеленый/Салатовый)
-                        'completed': ['bg-purple-500', 'text-white'],     // Завершен (Фиолетовый)
-                        'cancelled': ['bg-red-500', 'text-white']         // Отменен (Красный)
+                        'received': ['bg-yellow-500', 'text-black'],
+                        'in_progress': ['bg-blue-500', 'text-white'],
+                        'ready': ['bg-green-500', 'text-white'],
+                        'shipped': ['bg-green-300', 'text-gray-900'],
+                        'completed': ['bg-purple-600', 'text-white'],
+                        'cancelled': ['bg-red-500', 'text-white']
                     };
-
-                    // 3. Собираем ВСЕ возможные классы из карты, чтобы их удалить (автоматически)
                     const allStatusClasses = Object.values(statusMap).flat();
+                    row.classList.remove(...allStatusClasses, 'hover:bg-gray-50');
 
-                    // Добавим сюда и старые бледные классы на всякий случай, чтобы они тоже стерлись
-                    const oldClasses = [
-                        'bg-blue-100', 'text-blue-800', 'bg-yellow-100', 'text-yellow-800',
-                        'bg-indigo-300', 'text-indigo-900', 'bg-purple-100', 'text-purple-800',
-                        'bg-green-100', 'text-green-800', 'bg-teal-100', 'text-teal-800',
-                        'bg-gray-200', 'text-gray-800', 'bg-red-100', 'text-red-800'
-                    ];
-
-                    // Удаляем и новые, и старые классы перед покраской
-                    row.classList.remove(...allStatusClasses, ...oldClasses);
-
-                    // 4. Добавляем новые классы
                     const newClasses = statusMap[data.status_key];
                     if (newClasses) {
                         row.classList.add(...newClasses, 'hover:bg-opacity-80');
-                        // Не забудь покрасить сам селект внутри строки!
                         const select = row.querySelector('select');
                         if (select) {
-                            select.classList.remove(...allStatusClasses, ...oldClasses, 'bg-white');
+                            select.classList.remove(...allStatusClasses, 'bg-white');
                             select.classList.add(...newClasses);
                         }
                     }
                 }
-            } // Закрыли if (data.success)
-        }) // Закрыли .then(data => { ... })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            alert('Ошибка при обновлении статуса!');
-        });
+            }
+        })
+        .catch(err => console.error('Error:', err));
 };
 
-    window.autoRefreshStatuses = function() {
-        const rows = document.querySelectorAll('tr[data-order-id]');
-        if (rows.length === 0) return;
+window.autoRefreshStatuses = function () {
+    const rows = document.querySelectorAll('tr[data-order-id]');
+    if (rows.length === 0) return;
 
-        rows.forEach(row => {
-            const orderId = row.getAttribute('data-order-id');
+    rows.forEach(row => {
+        const orderId = row.getAttribute('data-order-id');
 
-            fetch(`/api/orders/${orderId}/status-data`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.status_key) {
+        fetch(`/api/orders/${orderId}/status-data`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.status_key) {
+                    const statusLabel = document.getElementById(`status-label-${orderId}`);
+                    if (statusLabel) statusLabel.textContent = data.label;
 
-                        // 1. Обновляем текст (для КЛИЕНТА)
-                        const statusLabel = document.getElementById(`status-label-${orderId}`);
-                        if (statusLabel) statusLabel.textContent = data.label;
+                    const statusSelect = document.getElementById(`status-select-${orderId}`);
+                    if (statusSelect && data.status_id) statusSelect.value = data.status_id;
 
-                        // 2. Обновляем селект (для МЕНЕДЖЕРА/АДМИНА)
-                        const statusSelect = document.getElementById(`status-select-${orderId}`);
-                        if (statusSelect && data.status_id) {
-                            statusSelect.value = data.status_id;
+                    const dateCell = document.getElementById(`date-status-${orderId}`);
+                    if (dateCell && data.date_status) dateCell.textContent = data.date_status;
+
+                    const statusMap = {
+                        'new': ['bg-gray-300', 'text-gray-900'],
+                        'received': ['bg-yellow-500', 'text-black'],
+                        'in_progress': ['bg-blue-500', 'text-white'],
+                        'ready': ['bg-green-500', 'text-white'],
+                        'shipped': ['bg-green-300', 'text-gray-900'],
+                        'completed': ['bg-purple-600', 'text-white'],
+                        'cancelled': ['bg-red-500', 'text-white']
+                    };
+
+                    const allStatusClasses = Object.values(statusMap).flat();
+                    row.classList.remove(...allStatusClasses, 'hover:bg-gray-50');
+
+                    const newClasses = statusMap[data.status_key];
+                    if (newClasses) {
+                        row.classList.add(...newClasses, 'hover:bg-opacity-80');
+                        if (statusSelect) {
+                            statusSelect.classList.remove(...allStatusClasses, 'bg-white');
+                            statusSelect.classList.add(...newClasses);
                         }
-
-                        // 3. Обновляем дату статуса (для ВСЕХ)
-                        const dateCell = document.getElementById(`date-status-${orderId}`);
-                        if (dateCell && data.date_status) {
-                            dateCell.textContent = data.date_status;
-                        }
-
-                        // 4. Обновляем цвета строки (твоя логика statusMap)
-                        const statusMap = {
-                            'new':         ['bg-gray-300', 'text-gray-900'],
-                            'received':    ['bg-yellow-500', 'text-black'],     // В очереди (Желтый)
-                            'in_progress': ['bg-blue-500', 'text-white'],       // В работе (Синий)
-                            'ready':       ['bg-green-500', 'text-white'],      // Готово (Зеленый)
-                            'shipped':     ['bg-green-300', 'text-gray-900'],   // Отгружено (Светло-зеленый/Салатовый)
-                            'completed':   ['bg-purple-500', 'text-white'],     // Завершен (Фиолетовый)
-                            'cancelled':   ['bg-red-500', 'text-white']         // Отменен (Красный)
-                        };
-
-                        const allStatusClasses = Object.values(statusMap).flat();
-                        row.classList.remove(...allStatusClasses);
-
-                        const newClasses = statusMap[data.status_key];
-                        if (newClasses) row.classList.add(...newClasses, 'hover:bg-opacity-80');
                     }
-                })
-                .catch(err => console.log('Silent refresh error:', err));
-        });
+                }
+            })
+            .catch(err => console.log('Silent refresh error:', err));
+    });
+};
 
+// ЗАПУСК ТАЙМЕРА
+if (document.querySelector('tr[data-order-id]')) {
+    setInterval(window.autoRefreshStatuses, 30000);
 }
+
+
+
 
 
