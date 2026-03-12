@@ -133,17 +133,17 @@
                     <tbody>
                     @forelse($orders as $order)
                         <tr data-order-id="{{ $order->id }}"
-                            class="transition-colors duration-300 hover:bg-gray-50
-                              @switch($order->status->name)
-                               @case('new') bg-blue-100 text-blue-800 @break
-                                @case('received') bg-yellow-100 text-yellow-800 @break
-                                 @case('in_progress') bg-indigo-300 text-indigo-900 @break
-                                 {{-- @case('paint_shop') bg-purple-100 text-purple-800 @break --}}
-                                   @case('ready') bg-green-100 text-green-800 @break
-                                    @case('shipped') bg-teal-100 text-teal-800 @break
-                                     @case('completed') bg-gray-200 text-gray-800 @break
-                                      @case('cancelled') bg-red-100 text-red-800 @break
-                                       @endswitch">
+                            class="transition-colors duration-300 hover:bg-opacity-80
+    @switch($order->status->name)
+        @case('new') bg-gray-300 text-gray-900 @break
+        @case('received') bg-yellow-500 text-black @break
+            @case('in_progress') bg-blue-500 text-white @break
+            @case('ready') bg-green-500 text-white @break
+            @case('shipped') bg-green-300 text-gray-800 @break
+            @case('completed') bg-purple-600 text-white @break
+            @case('cancelled') bg-red-500 text-white @break
+            @default bg-white text-gray-900
+    @endswitch">
                             <!-- Очередь -->
                             <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
                             <!-- Клиент -->
@@ -174,10 +174,21 @@
                             <td class="border px-2 py-1 text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <!-- Твой текущий Select -->
-                                    <select onchange="updateStatus({{ $order->id }}, this.value)"
-                                            class="text-sm border rounded px-1 py-0.5 focus:outline-none focus:ring focus:ring-blue-300">
+                                    <select id="status-select-{{ $order->id }}"
+                                            onchange="updateStatus({{ $order->id }}, this.value)"
+                                            class="text-sm border rounded px-1 py-0.5 focus:outline-none focus:ring focus:ring-blue-300
+                        @switch($order->status->name)
+                            @case('new') bg-gray-300 text-gray-900 @break
+                            @case('received') bg-yellow-500 text-black @break
+                            @case('in_progress') bg-blue-500 text-white @break
+                            @case('ready') bg-green-500 text-white @break
+                            @case('shipped') bg-green-300 text-gray-800 @break
+                            @case('completed') bg-purple-600 text-white @break
+                            @case('cancelled') bg-red-500 text-white @break
+                            @default bg-white text-gray-900
+                        @endswitch">
                                         @foreach($statuses as $status)
-                                            <option value="{{ $status->id }}" @selected($order->status_id == $status->id)>
+                                            <option value="{{ $status->id }}" @selected($order->status_id == $status->id) class="bg-white text-black">
                                                 {{ $status->label }}
                                             </option>
                                         @endforeach

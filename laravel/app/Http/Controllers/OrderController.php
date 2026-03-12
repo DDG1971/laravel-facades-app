@@ -688,6 +688,19 @@ class OrderController extends Controller
 
         return redirect()->back()->with('success', 'Статус заказа обновлён.');
     }
+    public function getStatusData(Order $order)
+    {
+        // Загружаем статус, чтобы получить label и name
+        $order->load('status');
+
+        return response()->json([
+            'success' => true,
+            'status_id'   => $order->status_id,          // Чтобы у менеджера переключился селект
+            'status_key'  => $order->status->name,       // Чтобы перекрасилась строка
+            'label'       => $order->status->label,      // Чтобы у клиента сменился текст
+            'date_status' => $order->date_status ? $order->date_status->format('d.m.Y') : '—',
+        ]);
+    }
 
 
     public function sendToClient(Order $order, Request $request)
@@ -732,15 +745,24 @@ class OrderController extends Controller
 
     public function sendCalculation(Order $order, Request $request)
     {
-        // 1. Обновляем флаги в БД (Email + TG)
-        $order->user->update([
-            'notify_manager' => $request->has('notify_manager'),
-            'notify_manager_tg' => $request->has('notify_manager_tg')
-        ]);
-        $order->customer->update([
-            'notify_owner' => $request->has('notify_owner'),
-            'notify_owner_tg' => $request->has('notify_owner_tg')
-        ]);
+        $target = $request->input('target'); // Получаем, кто цель: manager или customer
+        if ($target === 'manager') {
+            // Обновляем только флаги менеджера
+            $order->user->update([
+                'notify_manager' => $request->has('notify_manager'),
+                'notify_manager_tg' => $request->has('notify_manager_tg')
+            ]);
+            $statusMessage = "Расчёт отправлен Менеджеру.";
+        }
+
+        if ($target === 'customer') {
+            // Обновляем только флаги клиента
+            $order->customer->update([
+                'notify_owner' => $request->has('notify_owner'),
+                'notify_owner_tg' => $request->has('notify_owner_tg')
+            ]);
+            $statusMessage = "Расчёт отправлен Клиенту.";
+        }
 
         // 2. Подгружаем связи
         $order->load(['user', 'customer', 'status', 'colorCode.colorCatalog', 'coatingType', 'milling', 'items']);

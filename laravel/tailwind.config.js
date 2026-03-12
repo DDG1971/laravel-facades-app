@@ -12,8 +12,8 @@ export default {
     ],
     safelist: [
         // Цвета текста
-        'text-black', 'text-white',
-        'text-gray-500', 'text-gray-700','text-gray-800',
+        'text-black', 'text-white', 'text-gray-900',
+        'text-gray-500', 'text-gray-700','text-gray-800', 'text-gray-900',
         'text-red-500', 'text-red-700','text-red-800',
         'text-green-500', 'text-green-700','text-green-800',
         'text-blue-500','text-blue-800', 'text-yellow-700',
@@ -32,7 +32,14 @@ export default {
         'bg-purple-100',
         'bg-indigo-100',
         'bg-teal-100',
-        'bg-black',
+        'bg-black','bg-yellow-400', 'bg-yellow-500',
+        'bg-blue-400', 'bg-blue-500',
+        'bg-lime-400', 'bg-green-500',
+        'bg-purple-500', 'bg-purple-600',
+        'bg-red-500', 'bg-gray-300',
+        'bg-gray-300', 'bg-yellow-500', 'bg-blue-500',
+        'bg-green-500', 'bg-green-300', 'bg-purple-600', 'bg-red-500',
+
 
         // Сетка
         'grid', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4',
@@ -63,7 +70,7 @@ export default {
         'border-red-400',
 
         // Состояния
-        'hover:bg-gray-200', 'hover:bg-gray-700', 'hover:bg-indigo-500',
+        'hover:bg-gray-200', 'hover:bg-gray-700', 'hover:bg-indigo-500', 'hover:bg-opacity-80',
         'focus:ring', 'focus:ring-indigo-500','hover:bg-green-600', 'hover:bg-red-600',
 
         'fixed', 'bottom-0', 'left-0', 'right-0',

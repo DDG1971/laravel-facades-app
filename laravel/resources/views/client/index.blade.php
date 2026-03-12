@@ -138,7 +138,9 @@
                             <td class="border px-2 py-1">
                                 <div class="flex items-center justify-between px-1">
                                     {{-- Название статуса --}}
-                                    <span>{{ $order->status->label ?? '—' }}</span>
+                                    <span id="status-label-{{ $order->id }}">{{
+                                               $order->status->label }}
+                                     </span>
 
                                     {{-- Иконка оплаты (💰, 💸 или ❌) --}}
                                     <div class="text-lg" title="{{

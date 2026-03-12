@@ -133,60 +133,69 @@
             </a>
         </div>
         <!-- 🔹 Управление уведомлениями -->
-        <form action="{{ route('orders.send.calculation', $order) }}" method="POST">
         <div class="bg-white shadow rounded-lg p-6 border-l-4 border-green-500 mb-6">
             <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <span>📩</span> Настройка получателей расчёта
+                <span>📩</span> Управление уведомлениями по расчёту
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Секция Менеджера (Автора заказа) -->
-                <div class="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Менеджер: {{ $order->user->name }}</p>
-                    <div class="flex flex-col gap-2">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="notify_manager" value="1" {{ $order->user->notify_manager ? 'checked' : '' }}
-                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">📧 На Email ({{ $order->user->email }})</span>
-                        </label>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="notify_manager_tg" value="1" {{ $order->user->notify_manager_tg ? 'checked' : '' }}
-                            class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
-                            <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
-                        </label>
-                    </div>
-                </div>
 
-                <!-- Секция Руководителя -->
-                <div class="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Клиент: {{ $order->customer->company_name }}</p>
-                    <div class="flex flex-col gap-2">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="notify_owner" value="1" {{ $order->customer->notify_owner ? 'checked' : '' }}
-                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-700">📧 На Email ({{ $order->customer->email }})</span>
-                        </label>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="notify_owner_tg" value="1" {{ $order->customer->notify_owner_tg ? 'checked' : '' }}
-                            class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
-                            <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
-                        </label>
+                <!-- Форма для Менеджера -->
+                <form action="{{ route('orders.send.calculation', $order) }}" method="POST" class="p-4 bg-gray-50 rounded-md border border-gray-100 flex flex-col justify-between">
+                    @csrf
+                    <input type="hidden" name="price_group" value="{{ $priceGroup }}">
+                    <input type="hidden" name="target" value="manager"> <!-- Пометка для контроллера -->
+
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-3">👤 Менеджер: {{ $order->user->name }}</p>
+                        <div class="flex flex-col gap-3 mb-4">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="notify_manager" value="1" {{ $order->user->notify_manager ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-700">📧 На Email</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="notify_manager_tg" value="1" {{ $order->user->notify_manager_tg ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
+                                <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
+                            </label>
+                        </div>
                     </div>
-                </div>
+
+                    <button type="submit" class="w-full py-2 bg-blue-600 text-white text-xs font-black rounded hover:bg-blue-700 uppercase tracking-tighter transition">
+                        🚀 Отправить менеджеру
+                    </button>
+                </form>
+
+                <!-- Форма для Клиента/Руководителя -->
+                <form action="{{ route('orders.send.calculation', $order) }}" method="POST" class="p-4 bg-gray-50 rounded-md border border-gray-100 flex flex-col justify-between">
+                    @csrf
+                    <input type="hidden" name="price_group" value="{{ $priceGroup }}">
+                    <input type="hidden" name="target" value="customer"> <!-- Пометка для контроллера -->
+
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-3">🏢 Клиент: {{ $order->customer->company_name }}</p>
+                        <div class="flex flex-col gap-3 mb-4">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="notify_owner" value="1" {{ $order->customer->notify_owner ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-sm text-gray-700">📧 На Email</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="notify_owner_tg" value="1" {{ $order->customer->notify_owner_tg ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-sky-500 focus:ring-sky-500">
+                                <span class="ml-2 text-sm text-gray-700">📱 В Telegram</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2 bg-green-600 text-white text-xs font-black rounded hover:bg-indigo-700 uppercase tracking-tighter transition">
+                        🚀 Отправить клиенту
+                    </button>
+                </form>
+
             </div>
         </div>
-
-        <!-- 🔹 Форма отправки (оберни кнопку и чекбоксы выше в один тег <form>) -->
-
-            @csrf
-            <input type="hidden" name="price_group" value="{{ $priceGroup }}">
-
-            <!-- Перемести чекбоксы ВНУТРЬ этой формы или используй атрибут form="id" -->
-
-            <button type="submit" class="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-black rounded shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-sm">
-                🚀 Сохранить настройки и отправить расчет
-            </button>
-        </form>
 
     </div>
 </x-app-layout>
