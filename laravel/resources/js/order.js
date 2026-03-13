@@ -242,52 +242,56 @@ window.autoRefreshStatuses = function () {
     const rows = document.querySelectorAll('tr[data-order-id]');
     if (rows.length === 0) return;
 
-    rows.forEach(row => {
-        const orderId = row.getAttribute('data-order-id');
+    // Собираем все ID заказов со страницы в один массив
+    const orderIds = Array.from(rows).map(row => row.getAttribute('data-order-id'));
 
-        fetch(`/api/orders/${orderId}/status-data`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.status_key) {
-                    const statusLabel = document.getElementById(`status-label-${orderId}`);
-                    if (statusLabel) statusLabel.textContent = data.label;
+    fetch('/api/orders/batch-status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+        },
+        body: JSON.stringify({ ids: orderIds })
+    })
+        .then(res => res.json())
+        .then(response => {
+            if (response.success) {
+                const statusMap = {
+                    'new': ['bg-gray-300', 'text-gray-900'],
+                    'received': ['bg-yellow-500', 'text-black'],
+                    'in_progress': ['bg-blue-500', 'text-white'],
+                    'ready': ['bg-green-500', 'text-white'],
+                    'shipped': ['bg-green-300', 'text-gray-800'],
+                    'completed': ['bg-purple-600', 'text-white'],
+                    'cancelled': ['bg-red-500', 'text-white']
+                };
+                const allClasses = Object.values(statusMap).flat();
 
-                    const statusSelect = document.getElementById(`status-select-${orderId}`);
-                    if (statusSelect && data.status_id) statusSelect.value = data.status_id;
+                // Пробегаемся по полученным данным и обновляем каждую строку
+                Object.keys(response.orders).forEach(id => {
+                    const data = response.orders[id];
+                    const row = document.querySelector(`tr[data-order-id="${id}"]`);
+                    if (!row) return;
 
-                    const dateCell = document.getElementById(`date-status-${orderId}`);
-                    if (dateCell && data.date_status) dateCell.textContent = data.date_status;
+                    // Обновляем текст и дату
+                    const label = document.getElementById(`status-label-${id}`);
+                    const date = document.getElementById(`date-status-${id}`);
+                    if (label) label.textContent = data.label;
+                    if (date) date.textContent = data.date_status;
 
-                    const statusMap = {
-                        'new': ['bg-gray-300', 'text-gray-900'],
-                        'received': ['bg-yellow-500', 'text-black'],
-                        'in_progress': ['bg-blue-500', 'text-white'],
-                        'ready': ['bg-green-500', 'text-white'],
-                        'shipped': ['bg-green-300', 'text-gray-900'],
-                        'completed': ['bg-purple-600', 'text-white'],
-                        'cancelled': ['bg-red-500', 'text-white']
-                    };
-
-                    const allStatusClasses = Object.values(statusMap).flat();
-                    row.classList.remove(...allStatusClasses, 'hover:bg-gray-50');
-
-                    const newClasses = statusMap[data.status_key];
-                    if (newClasses) {
-                        row.classList.add(...newClasses, 'hover:bg-opacity-80');
-                        if (statusSelect) {
-                            statusSelect.classList.remove(...allStatusClasses, 'bg-white');
-                            statusSelect.classList.add(...newClasses);
-                        }
+                    // Обновляем цвета
+                    row.classList.remove(...allClasses, 'bg-white', 'text-gray-900');
+                    if (statusMap[data.status_key]) {
+                        row.classList.add(...statusMap[data.status_key]);
                     }
-                }
-            })
-            .catch(err => console.log('Silent refresh error:', err));
-    });
+                });
+            }
+        })
+        .catch(err => console.error('Ошибка пачки:', err));
 };
-
 // ЗАПУСК ТАЙМЕРА
 if (document.querySelector('tr[data-order-id]')) {
-    setInterval(window.autoRefreshStatuses, 30000);
+    setInterval(window.autoRefreshStatuses, 60000);
 }
 
 

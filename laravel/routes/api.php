@@ -32,3 +32,21 @@ Route::get('/orders/{order}/status-data', function (Order $order) {
     ]);
 });
 
+Route::post('/orders/batch-status', function (Request $request) {
+    $ids = $request->input('ids', []);
+
+    // Берем только нужные заказы одной пачкой
+    $orders = Order::whereIn('id', $ids)->with('status')->get();
+
+    $data = $orders->mapWithKeys(function ($order) {
+        return [$order->id => [
+            'label'       => $order->status->label,
+            'status_key'  => $order->status->name,
+            'date_status' => $order->date_status
+                ? \Illuminate\Support\Carbon::parse($order->date_status)->format('d.m.Y')
+                : '—',
+        ]];
+    });
+
+    return response()->json(['success' => true, 'orders' => $data]);
+});
