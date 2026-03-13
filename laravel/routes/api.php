@@ -26,7 +26,9 @@ Route::get('/orders/{order}/status-data', function (Order $order) {
         'status_id'   => $order->status_id, // КРИТИЧНО для селекта менеджера
         'label'       => $order->status->label,
         'status_key'  => $order->status->name,
-        'date_status' => $order->date_status ? $order->date_status->format('d.m.Y') : '—', // Обновляем дату
+        'date_status' => $order->date_status
+            ? \Illuminate\Support\Carbon::parse($order->date_status)->format('d.m.Y')
+            : '—',
     ]);
 });
 

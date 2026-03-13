@@ -82,6 +82,7 @@ class Order extends Model
     }
     protected $casts = [
         'date_created' => 'date',
+        'date_status'  => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
