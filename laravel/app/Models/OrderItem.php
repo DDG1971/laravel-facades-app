@@ -72,23 +72,45 @@ public function thickness()
 // Логика добавки +4 мм
  public function needsSawAddition(): bool
  {
-     $excludedFacades = config('facade.exclude_from_saw');
-     $noAddition = config('facade.no_addition');
-     // если фасад вообще не пилится
-if (in_array($this->facadeType->name_en ?? '', $excludedFacades, true)) {
-    return false;
-}
-// если фасад в списке "без +4"
- if (in_array($this->facadeType->name_en ?? '', $noAddition, true)) {
-     return false;
- }
- // по умолчанию → прибавляем +4
-return true;
+     // 1. Подготовка данных (чистим и приводим к нижнему регистру)
+     $facadeName = strtolower(trim($this->facadeType->name_en ?? ''));
+     $orderMillingName = strtolower(trim($this->order->milling->name_en ?? ''));
+
+     $excluded = array_map('strtolower', config('facade.exclude_from_saw', []));
+     $noAddition = array_map('strtolower', config('facade.no_addition', []));
+
+     // --- ПРИОРИТЕТ 1: КОНКРЕТНАЯ СТРОКА (ПОЗИЦИЯ) ---
+
+     // Если ЭТОТ фасад в списке исключенных (совсем не пилим)
+     if (in_array($facadeName, $excluded, true)) {
+         return false;
+     }
+
+     // Если ЭТОТ фасад в списке "без +4" (Bravo, Lhandle)
+     if (in_array($facadeName, $noAddition, true)) {
+         return false;
+     }
+
+     // Если ЭТОТ фасад НЕ в списках исключений (значит, он "плюсовой"),
+     // то нам ПЛЕВАТЬ, что там в заголовке заказа. Плюсуем +4.
+     if (!empty($facadeName) && !in_array($facadeName, $noAddition, true) && !in_array($facadeName, $excluded, true)) {
+         return true;
+     }
+
+     // --- ПРИОРИТЕТ 2: ЗАГОЛОВОК ЗАКАЗА (MILLING) ---
+     // (Сработает только если тип фасада в строке какой-то нейтральный/пустой)
+
+     if (in_array($orderMillingName, $excluded, true) || in_array($orderMillingName, $noAddition, true)) {
+         return false;
+     }
+
+     // По умолчанию для всего остального
+     return true;
  }
 
     public function calculatePrice(string $priceGroup = 'retail'): float
     {
-        // 1. Используем уже готовый метод для получения ставки (за м.п. или м2)
+        // 1. Использую уже готовый метод для получения ставки (за м.п. или м2)
         $pricePerUnit = $this->getRate($priceGroup);
 
         // Выясняем единицу измерения (нужно для логики количества и допов)
@@ -120,6 +142,7 @@ return true;
                     $coatingExtra = match(strtolower($this->order->coatingType->name)) {
                         'supermat' => 5,
                         'supermat+varnish' => 10,
+                        'supernat+varnish10%' => 10,
                         'glossy' => 20,
                         default => 0
                     };

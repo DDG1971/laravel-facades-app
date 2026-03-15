@@ -619,7 +619,7 @@ class OrderController extends Controller
 
         // 2. Загружаем позиции БЕЗ связи milling (из-за которой была ошибка)
         $items = $order->items()
-            ->with(['facadeType', 'thickness'])
+            ->with(['facadeType', 'thickness','order.milling'])
             ->get();
 
         $totalQuantity = $items->sum('quantity');
