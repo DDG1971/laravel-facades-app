@@ -15,13 +15,13 @@ return [
 ],
 // фасады, которые включать, но без +4 мм
 'no_addition' => [
-'Lhandle',
-'uhandle',
+'L handle',
+'u handle',
 'Sparta',
 'Bravo',
 'Roof',
 'Line',
-'Pilaster',
+'Pilasters',
 'Corner',
 ],
 
