@@ -165,7 +165,9 @@
                             <!-- Код цвета -->
                             <td class="border px-2 py-1 text-center">{{ $order->colorCode->code ?? '—' }}</td>
                             <!-- Покрытие -->
-                            <td class="border px-2 py-1">{{ $order->coatingType->name ?? '—' }}</td>
+                            <td class="border px-2 py-1 whitespace-normal break-words max-w-[150px]">
+                                {{ $order->coatingType->name ?? '—' }}
+                            </td>
                             <!-- Фрезеровка -->
                             <td class="border px-2 py-1">{{ $order->milling->name ?? '—' }}</td>
                             <!-- Площадь -->

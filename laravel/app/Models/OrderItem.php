@@ -58,9 +58,23 @@ public function thickness()
     protected static function booted()
     {
         static::saving(function ($item) {
+            // 1. Считаем квадраты (как и было)
             if ($item->height && $item->width && $item->quantity) {
                 $item->square_meters = ($item->height * $item->width / 1_000_000) * $item->quantity;
             }
+
+            // 2. ФИКСИРУЕМ ЦЕНУ И ИТОГО
+            // Определяем группу цен клиента (дилер, розница и т.д.)
+            $priceGroup = $item->order->customer->price_group ?? 'retail';
+
+            // Вызываем расчет цены с учетом группы
+            $total = $item->calculatePrice($priceGroup);
+
+            // Записываем результаты в базу, чтобы они там "застыли"
+            $item->item_total = $total;
+
+            // Цена за единицу (делим общий итог строки на количество)
+            $item->unit_price = ($item->quantity > 0) ? ($total / $item->quantity) : 0;
         });
     }
 // Связь со сверлением
@@ -190,9 +204,9 @@ public function thickness()
      * Получение финальной ставки (цены за ед. изм.)
      */
     public function getRate(string $priceGroup = 'retail'): float
-    {
+    {   //dd($priceGroup);
         $millingBase = $this->order->milling?->getBasePriceFor($priceGroup) ?? 0;
-        $facadePricing = $this->facadeType?->resolvePricing($millingBase, 'm2')
+        $facadePricing = $this->facadeType?->resolvePricing($millingBase, 'm2', $priceGroup)
             ?? ['base' => $millingBase, 'unit' => 'm2'];
 
         $rate = (float) $facadePricing['base'];
@@ -228,4 +242,6 @@ public function thickness()
 
         return $rate;
     }
+
+
 }

@@ -86,13 +86,20 @@ class Order extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-    public function calculateTotal(string $priceGroup = 'retail'): float
+    public function getPriceGroup(): string
     {
-        return $this->items->sum(function ($item) use ($priceGroup)
-        {
-            return $item->calculatePrice($priceGroup);
-        });
+        // Предположим, у клиента есть поле price_group (retail, dealer, private)
+        return $this->customer->price_group ?? 'retail';
     }
+
+    public function calculateTotal(?string $priceGroup = null): float
+    {
+        // Если группа не передана явно, берем ту, что привязана к клиенту
+        $group = $priceGroup ?: $this->getPriceGroup();
+
+        return $this->items->sum(fn($item) => $item->calculatePrice($group));
+    }
+
     public function sendEmailVerificationNotification()
     {
         $this->notify(new CustomVerifyEmail);

@@ -32,41 +32,37 @@ class FacadeType extends Model
 
     public function resolvePricing(float $millingBase, string $millingUnit, string $priceGroup = 'retail'): array
     {
-        $base = $millingBase;
+        $base = $millingBase; // По умолчанию берем цену из шапки заказа (Genoa)
 
         switch ($this->pricing_mode) {
             case 'set_base':
                 $base = (float) ($this->pricing_value ?? 0);
                 break;
+
             case 'percent_add':
                 $percent = (float) ($this->pricing_value ?? 0);
                 $base = $millingBase * (1 + $percent / 100);
                 break;
-            case 'inherit':
-                // ищем milling с таким же name_en
-                 $linkedMilling = Milling::where('name_en', $this->name_en)->first();
-                 if ($linkedMilling) {
-                     $base = $linkedMilling->getBasePriceFor($priceGroup);
-                 } // или priceGroup
-                 break; case 'none':
-                     default:
-                // база остаётся как millingBase
-                break;
-        }
 
-        $unit = $millingUnit;
-
-        switch ($this->unit_mode) {
-            case 'm2':
-            case 'lm':
-            case 'piece':
-                $unit = $this->unit_mode;
-                break;
             case 'inherit':
+                // Пытаемся найти фрезеровку, имя которой совпадает с именем фасада (например, "Bravo")
+                $linkedMilling = \App\Models\Milling::where('name_en', $this->name_en)->first();
+
+                if ($linkedMilling) {
+                    // Если нашли свою фрезеровку — берем ЕЁ цену для текущей группы (dealer/retail)
+                    $base = $linkedMilling->getBasePriceFor($priceGroup);
+                } else {
+                    // Если своей фрезеровки нет — оставляем цену из шапки заказа
+                    $base = $millingBase;
+                }
+                break;
+
             default:
-                // unit остаётся как millingUnit
+                $base = $millingBase;
                 break;
         }
+
+        $unit = ($this->unit_mode === 'inherit') ? $millingUnit : $this->unit_mode;
 
         return [
             'base' => $base,
