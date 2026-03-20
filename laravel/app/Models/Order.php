@@ -11,8 +11,11 @@ use Illuminate\Database\Eloquent\Model;
  * // и другие поля таблицы orders
  */
 
+
 class Order extends Model
+
 {
+
     protected $fillable = [
         'customer_id',
         'user_id',
@@ -73,6 +76,10 @@ class Order extends Model
     {
         return $this->belongsTo(Milling::class);
     }
+    public function paintShop()
+    {
+        return $this->belongsTo(PaintShop::class, 'paint_shop_id');
+    }
     public function getTotalSquareAttribute()
     {
         return $this->items->sum(function($item) {
@@ -116,6 +123,8 @@ class Order extends Model
         $debt = $total - $this->paid_amount;
         return $debt > 0 ? $debt : 0;
     }
+
+
 
 
 

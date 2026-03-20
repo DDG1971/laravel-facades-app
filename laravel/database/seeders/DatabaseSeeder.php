@@ -41,5 +41,9 @@ class DatabaseSeeder extends Seeder
             ColorCodeSeeder::class,
             CoatingTypeSeeder::class,
         ]);
+
+        $this->call([
+            PaintShopSeeder::class,
+        ]);
     }
 }

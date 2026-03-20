@@ -81,6 +81,7 @@ Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     // изм.статуса для админа
     Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus']) ->name('orders.updateStatus');
     Route::post('/orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.updatePayment');
+    Route::post('/orders/{order}/paint-shop', [OrderController::class, 'updatePaintShop'])->name('orders.updatePaintShop');
 
 
     Route::get('/orders/{order}/export-pdf', [OrderController::class, 'exportClientPdf']) ->name('orders.export.pdf');

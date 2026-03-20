@@ -830,6 +830,30 @@ class OrderController extends Controller
             \Log::error("Ошибка отправки в Telegram: " . $e->getMessage());
         }
     }
+    public function updatePaintShop(Request $request, Order $order)
+    {
+        // 1. Валидация (проверяю, что прислали существующий ID цеха)
+        $request->validate([
+            'paint_shop_id' => 'required|exists:paint_shops,id'
+        ]);
+
+        // 2. Обновляем данные
+        $order->update([
+            'paint_shop_id' => $request->input('paint_shop_id'),
+        ]);
+
+        // 3. Ответ для AJAX
+        if ($request->ajax()) {
+            $order->load('paintShop');
+            return response()->json([
+                'success' => true,
+                'paint_shop_name' => $order->paintShop->name, // Вернет "Г" или "К"
+                'paint_shop_id' => $order->paint_shop_id,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Цех обновлён.');
+    }
 
 
 

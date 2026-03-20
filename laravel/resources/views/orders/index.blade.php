@@ -105,8 +105,9 @@
                             </div>
                         </th>
                         <th class="border px-2 py-1">Дата статуса</th>
-                        <th class="border px-2 py-1">Расчет</th>
                         <th class="border px-2 py-1">Действ</th>
+                        <th class="border px-2 py-1">Расчет</th>
+
                     </tr>
                     </thead>
                 </table>
@@ -127,8 +128,9 @@
                         <col class="w-[70px]">  <!-- м² -->
                         <col class="w-[150px]"> <!-- Статус -->
                         <col class="w-[110px]"> <!-- Дата статуса -->
-                        <col class="w-[80px]">  <!-- Расчет -->
                         <col class="w-[100px]"> <!-- Действ -->
+                        <col class="w-[80px]">  <!-- Расчет -->
+
                     </colgroup>
                     <tbody>
                     @forelse($orders as $order)
@@ -145,7 +147,16 @@
             @default bg-white text-gray-900
     @endswitch">
                             <!-- Очередь -->
-                            <td class="border px-2 py-1 text-center">{{ $order->queue_number }}</td>
+                            <td class="border px-2 py-1 text-center">
+                                <div class="font-bold text-gray-800">{{ $order->queue_number }}</div>
+
+                                <select onchange="updatePaintShop({{ $order->id }}, this.value)"
+                                        class="text-[10px] font-black border-none p-0 m-0 bg-transparent cursor-pointer focus:ring-0
+            {{ $order->paint_shop_id == 2 ? 'text-orange-600' : 'text-blue-700' }}">
+                                    <option value="1" @selected($order->paint_shop_id == 1)>Г</option>
+                                    <option value="2" @selected($order->paint_shop_id == 2)>К</option>
+                                </select>
+                            </td>
                             <!-- Клиент -->
                             <td class="border px-2 py-1 truncate overflow-hidden whitespace-nowrap">
                                 {{ $order->customer->company_name ?? 'нет данных' }}
@@ -213,16 +224,6 @@
                             <td id="date-status-{{ $order->id }}" class="border px-2 py-1 text-center">
                                 {{ $order->date_status ? \Carbon\Carbon::parse($order->date_status)->format('d.m.Y') : '—' }}
                             </td>
-                            <!-- Цех -->
-                            <td class="border px-2 py-1 text-center">
-                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
-                                    <a href="{{ route('orders.manage', $order->id) }}"
-                                       class="text-lg hover:scale-110 transition-transform inline-block"
-                                       title="Расчеты и PDF">
-                                        🧮
-                                    </a>
-                                @endif
-                            </td>
                             <!-- Действия -->
                             <td class="border px-2 py-1 space-x-2 text-center">
                                 <a href="{{ route('orders.preview', $order) }}"
@@ -235,6 +236,18 @@
                                     ✏️
                                 </a>
                             </td>
+
+                            <!-- Цех -->
+                            <td class="border px-2 py-1 text-center">
+                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
+                                    <a href="{{ route('orders.manage', $order->id) }}"
+                                       class="text-lg hover:scale-110 transition-transform inline-block"
+                                       title="Расчеты и PDF">
+                                        🧮
+                                    </a>
+                                @endif
+                            </td>
+
                         </tr>
                     @empty
                         <tr>
