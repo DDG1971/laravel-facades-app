@@ -19,25 +19,39 @@
     <div class="print-page">
         <!-- Заголовок -->
         <div class="mb-4 text-sm">
-            <div class="flex justify-center items-center gap-6 mb-2">
-                <h2 class="font-bold text-lg">Очередь №{{ $order->queue_number }}</h2>
-                <span><strong>Дата :</strong> {{ $order->date_received }}</span>
+            <!-- Очередь и дата: приглушаем стиль -->
+            <div class="flex justify-center items-center gap-6 mb-2 text-gray-500">
+                <span>Очередь №{{ $order->queue_number }}</span>
+                <span>Дата: {{ $order->date_received }}</span>
             </div>
-            <div class="flex justify-center items-center gap-6 mb-2 border-b pb-2">
-                <span><strong>Клиент:</strong> {{ $order->customer->company_name ?? '—' }}</span>
-                <span><strong>№кл-та:</strong> {{ $order->client_order_number }}</span>
+
+            <!-- Клиент: основной акцент -->
+            <div class="flex justify-center items-center gap-4 mb-2 border-b pb-3">
+                <h2 class="text-xl font-black text-slate-800 tracking-tight">
+                    {{ $order->customer->company_name ?? '—' }}
+                </h2>
+                <!-- Номер клиента в виде бейджа -->
+                <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200 font-bold text-xs">
+            №{{ $order->client_order_number }}
+        </span>
             </div>
         </div>
         {{--шапка--}}
-        <div class="flex justify-center items-center gap-6 mb-2 border-b pb-2">
+        <div class="flex justify-center items-center gap-8 mb-2 border-b pb-2">
     <span>
-        <strong>Цвет:</strong>
-        {{ $order->colorCatalog->name_en ?? '' }}
-        {{ $order->colorCode->code ?? '' }}
-        {{ $order->coatingType->name ?? '' }}
+        <span class="text-gray-500 font-medium">Цвет:</span>
+        <strong class="text-gray-900 font-extrabold ml-1">
+            {{ $order->colorCatalog->name_en ?? '' }}
+            {{ $order->colorCode->code ?? '' }}
+            {{ $order->coatingType->name ?? '' }}
+        </strong>
     </span>
+
             <span>
-        <strong>Фрезеровка:</strong> {{ $order->milling->name ?? '—' }}
+        <span class="text-gray-500 font-medium">Фрезеровка:</span>
+        <strong class="text-gray-900 font-extrabold ml-1">
+            {{ $order->milling->name ?? '—' }}
+        </strong>
     </span>
         </div>
 
