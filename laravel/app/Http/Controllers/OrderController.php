@@ -631,7 +631,14 @@ class OrderController extends Controller
     public function manage(Order $order, Request $request)
     {
         $order->load(['items.drilling', 'items.facadeType', 'items.thickness']);
-        $priceGroup = $request->input('price_group', 'retail');
+        if ($request->has('price_group')) {
+            $newGroup = $request->input('price_group');
+            if (in_array($newGroup, ['retail', 'dealer', 'private'])) {
+                $order->update(['price_group' => $newGroup]);
+            }
+        }
+        // Теперь $priceGroup всегда берется из базы (уже обновленный или старый)
+        $priceGroup = $order->price_group;
 
         $allowed = ['retail', 'dealer', 'private'];
         if (!in_array($priceGroup, $allowed, true)) {
@@ -650,6 +657,7 @@ class OrderController extends Controller
 
         return view('orders.manage', compact(
             'order',
+            'priceGroup',
             'customers',
             'colorCatalogs',
             'colors',
@@ -659,7 +667,6 @@ class OrderController extends Controller
             'thicknesses',
             'drillings',
             'statuses',
-            'priceGroup',
         ));
     }
 

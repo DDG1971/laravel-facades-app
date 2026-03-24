@@ -38,11 +38,11 @@ public function order()
 // поменял в миграции bool на tinyInteger(методы возвращают bool, потому что они проверяют конкретное состояние)
 public function isDoubleSided(): bool
 {
-    return $this->coating_mode === 1;
+    return $this->coating_mode == 1;
 }
 public function isPartialCoating(): bool
 {
-    return $this->coating_mode === 2;
+    return $this->coating_mode == 2;
 }
 // Связь с типом фасада
 public function facadeType()
@@ -65,7 +65,7 @@ public function thickness()
 
             // 2. ФИКСИРУЕМ ЦЕНУ И ИТОГО
             // Определяем группу цен клиента (дилер, розница и т.д.)
-            $priceGroup = $item->order->customer->price_group ?? 'retail';
+            $priceGroup = $item->order->price_group ?? 'retail'; //  $priceGroup = $item->order->customer->price_group ?? 'retail';
 
             // Вызываем расчет цены с учетом группы
             $total = $item->calculatePrice($priceGroup);
@@ -154,10 +154,10 @@ public function thickness()
                 $coatingExtra = 0;
                 if ($this->order->coatingType) {
                     $coatingExtra = match(strtolower($this->order->coatingType->name)) {
-                        'supermat' => 5,
-                        'supermat+varnish' => 10,
-                        'supernat+varnish10%' => 10,
-                        'glossy' => 20,
+                        'supermat', 'супермат' => 5,
+                        'supermat+varnish', 'супермат+лак' => 10,
+                        'supermat+varnish10%', 'супермат+лак10%' => 10,
+                        'glossy', 'глянец' => 20,
                         default => 0
                     };
                 }

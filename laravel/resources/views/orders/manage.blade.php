@@ -75,13 +75,24 @@
                     @default <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full uppercase tracking-wider">Unpaid</span> @break
                 @endswitch
             </h3>
+            @php
+                // Если заказ оплачен полностью, берем зафиксированную сумму из базы.
+                // Если нет (Unpaid/Partial) — всегда считаем по формуле (синяя цифра).
+                $displayTotal = ($order->payment_status === 'paid' && $order->total_price > 0)
+                    ? $order->total_price
+                    : $order->calculateTotal($priceGroup);
+
+                $displayDebt = max(0, $displayTotal - $order->paid_amount);
+            @endphp
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                     <p class="text-gray-500 text-sm italic">Total Order Amount:</p>
                     <p class="text-2xl font-black text-gray-800">
-                        ${{ number_format($order->total_price ?: $order->calculateTotal($priceGroup), 2, '.', ',') }}
+                        ${{ number_format($displayTotal, 2, '.', ',') }}
+
                     </p>
+
                 </div>
                 <div>
                     <p class="text-gray-500 text-sm italic">Paid to date:</p>
@@ -91,8 +102,8 @@
                 </div>
                 <div>
                     <p class="text-gray-500 text-sm italic">Balance Due:</p>
-                    <p class="text-2xl font-black {{ $order->debt_amount > 0 ? 'text-red-600' : 'text-gray-400' }}">
-                        ${{ number_format($order->debt_amount, 2, '.', ',') }}
+                    <p class="text-2xl font-black {{ $displayDebt > 0 ? 'text-red-600' : 'text-gray-400' }}">
+                        ${{ number_format($displayDebt, 2, '.', ',') }}
                     </p>
                 </div>
             </div>
@@ -116,9 +127,9 @@
                     Post Payment
                 </button>
 
-                @if($order->payment_status !== 'paid' && ($order->total_price ?: $order->calculateTotal($priceGroup)) > 0)
+                @if($order->payment_status !== 'paid' && $displayTotal > 0)
                     <button type="button"
-                            onclick="document.getElementById('amount').value = '{{ $order->debt_amount }}'"
+                            onclick="document.getElementById('amount').value = '{{ number_format($displayDebt, 2, '.', '') }}'"
                             class="text-xs text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1">
                         <span>⚡ Pay Full Balance</span>
                     </button>

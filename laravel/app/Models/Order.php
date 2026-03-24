@@ -36,6 +36,7 @@ class Order extends Model
         'date_status',
         'payment_status',
         'paid_amount',
+        'price_group',
     ];
     public function customer()
     {
@@ -101,11 +102,14 @@ class Order extends Model
 
     public function calculateTotal(?string $priceGroup = null): float
     {
-        // Если группа не передана явно, берем ту, что привязана к клиенту
-        $group = $priceGroup ?: $this->getPriceGroup();
+        // 1. Вычисляем рабочую группу (если пришел null, берем из базы)
+        $group = $priceGroup ?: ($this->price_group ?: $this->getPriceGroup());
 
-        return $this->items->sum(fn($item) => $item->calculatePrice($group));
-    }
+        // 2. ВАЖНО: передаем $group в use и вызываем метод тоже с $group
+        return (float) $this->items->sum(function($item) use ($group) {
+            return $item->calculatePrice($group);
+        });
+        }
 
     public function sendEmailVerificationNotification()
     {
@@ -116,14 +120,19 @@ class Order extends Model
      * Вычисляет остаток, который клиент должен доплатить.
      * Использование в коде: $order->debt_amount
      */
+
     public function getDebtAmountAttribute()
     {
-        // Если в базе 0, берем расчетную цену, иначе сохраненную
-        $total = $this->total_price > 0 ? $this->total_price : $this->calculateTotal('retail');
-        $debt = $total - $this->paid_amount;
-        return $debt > 0 ? $debt : 0;
-    }
+        // Берем группу прямо из этого заказа
+        $group = $this->price_group ?? 'retail';
 
+        // Аналогично: считаем по формуле, пока не оплачено полностью
+        $total = ($this->payment_status === 'paid' && $this->total_price > 0)
+            ? $this->total_price
+            : $this->calculateTotal($group);
+
+        return max(0, $total - ($this->paid_amount ?? 0));
+    }
 
 
 
