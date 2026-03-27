@@ -294,25 +294,32 @@ if (document.querySelector('tr[data-order-id]')) {
     setInterval(window.autoRefreshStatuses, 60000);
 }
 
-function updatePaintShop(orderId, shopId) {
-    fetch(`/admin/orders/${orderId}/update-paint-shop`, {
+// resources/js/order.js
+
+const updatePaintShop = (orderId, shopId) => {
+    console.log('Меняем цех для заказа:', orderId, 'на цех ID:', shopId);
+
+    fetch(`/orders/${orderId}/paint-shop`, { // ПРОВЕРЬТЕ: в роутах /admin или нет?
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({ paint_shop_id: shopId })
     })
-        .then(response => {
-            if (!response.ok) throw new Error('Ошибка обновления');
-            // Можно добавить уведомление об успехе (Toast)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Сохранено в БД!');
+            }
         })
-        .catch(error => {
-            alert('Не удалось сменить цех: ' + error.message);
-            location.reload(); // Откатываем визуально, если база не обновилась
-        });
-}
+        .catch(err => alert('Ошибка сохранения: ' + err));
+};
+
+// ЭТО КРИТИЧНО ДЛЯ VITE:
+window.updatePaintShop = updatePaintShop;
 
 
 

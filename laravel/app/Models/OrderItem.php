@@ -45,15 +45,19 @@ public function isPartialCoating(): bool
     return $this->coating_mode == 2;
 }
 // Связь с типом фасада
-public function facadeType()
-{
-    return $this->belongsTo(FacadeType::class);
-}
+    public function facadeType()
+    {
+        return $this->belongsTo(FacadeType::class);
+    }
 // Связь с толщиной
 public function thickness()
 {
     return $this->belongsTo(Thickness::class);
 }
+public function milling()
+    {
+        return $this->belongsTo(Milling::class);
+    }
 // расчет квадратуры позиции
     protected static function booted()
     {

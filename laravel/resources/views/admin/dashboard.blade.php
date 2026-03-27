@@ -39,9 +39,12 @@
             </div>
 
             <!--  блок статистики -->
-            <div class="p-6 bg-white shadow rounded">
-                <h2 class="font-semibold">📊 Statistics</h2>
-                <p>Общая квадратура заказов за месяц:</p>
+            <div class="p-6 bg-white shadow rounded hover:bg-gray-50 transition">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-semibold">📊 Statistics</h2>
+                    <a href="{{ route('admin.statistics') }}" class="text-sm text-blue-600 hover:underline">Подробнее →</a>
+                </div>
+                <p class="mt-2">Общая квадратура заказов за месяц:</p>
                 <p class="text-xl font-bold">{{ $totalSquare }} м²</p>
             </div>
 

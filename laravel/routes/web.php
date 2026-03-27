@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
 // Админка
 Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/statistics', [AdminController::class, 'fullStatistics'])->name('admin.statistics');
     Route::get('/admin/pending-users', [AdminController::class, 'pending'])->name('admin.pending');
     Route::post('/admin/approve/{user}', [AdminController::class, 'approve'])->name('admin.approve');
 
