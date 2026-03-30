@@ -28,14 +28,16 @@ class AdminController extends Controller
     }
     public function dashboard(): \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
     {
-
         Log::info('Admin dashboard route reached');
 
-        return view('admin.dashboard', ['totalSquare' => 0]);
+        // Считаем сумму по существующей колонке square_meters за текущий месяц
+        $totalSquare = \App\Models\Order::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('square_meters');
 
-
-        // для обычного пользователя
-        //return view('dashboard');
+        return view('admin.dashboard', [
+            'totalSquare' => round($totalSquare, 2)
+        ]);
     }
     public function clients()
     {
