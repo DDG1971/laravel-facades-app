@@ -11,6 +11,11 @@
 
             <!-- Форма фильтрации -->
             <form method="GET" action="{{ route('admin.orders.index') }}" class="flex flex-wrap gap-2">
+                <!-- Кнопка создания заказа -->
+                <a href="{{ route('admin.orders.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
+                    ➕ Новый заказ
+                </a>
                 <!-- Поиск по номеру -->
                 <input type="text"
                        name="client_order_number"
