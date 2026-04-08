@@ -58,6 +58,8 @@
                         <option value="retail" {{ $priceGroup === 'retail' ? 'selected' : '' }}>🛒 Retail (Розница)</option>
                         <option value="private" {{ $priceGroup === 'private' ? 'selected' : '' }}>👤 Private (Частник)</option>
                         <option value="dealer" {{ $priceGroup === 'dealer' ? 'selected' : '' }}>🤝 Dealer (Дилер)</option>
+                        <option value="coloring" {{ $priceGroup === 'coloring' ? 'selected' : '' }}>🎨 Coloring (Покраска)</option>
+
                     </select>
                 </form>
             </div>

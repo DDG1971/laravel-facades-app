@@ -23,6 +23,7 @@
                 <th class="border px-2 py-1">Дилерская</th>
                 <th class="border px-2 py-1">Розничная</th>
                 <th class="border px-2 py-1">Физ. лица</th>
+                <th class="border px-2 py-1">Окрас сырых</th>
                 <th class="border px-2 py-1">Действия</th>
             </tr>
             </thead>
@@ -35,6 +36,7 @@
                     <td class="border px-2 py-1">{{ $milling->price_dealer }}</td>
                     <td class="border px-2 py-1">{{ $milling->price_retail }}</td>
                     <td class="border px-2 py-1">{{ $milling->price_private }}</td>
+                    <td class="border px-2 py-1">{{ $milling->price_coloring }}</td>
                     <td class="border px-2 py-1 whitespace-nowrap">
                         <a href="{{ route('millings.show', $milling) }}" class="text-blue-600 mr-2">👁️</a>
                         <a href="{{ route('millings.edit', $milling) }}" class="text-blue-600 mr-2">✏️</a>

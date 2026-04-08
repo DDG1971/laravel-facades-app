@@ -58,6 +58,12 @@
             <input type="text" id="price_private" name="price_private"
                    value="{{ old('price_private') }}" class="border px-2 py-1 w-full">
         </div>
+        <div>
+            <label for="price_coloring">Цена сырых</label>
+            <input type="text" id="price_coloring" name="price_coloring"
+                   value="{{ old('price_coloring') }}" class="border px-2 py-1 w-full">
+        </div>
+
 
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
             ➕ Добавить

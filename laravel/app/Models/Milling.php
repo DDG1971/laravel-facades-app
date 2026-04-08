@@ -12,6 +12,7 @@ class Milling extends Model
         'price_retail',
         'price_dealer',
         'price_private',
+        'price_coloring',
         'name_en',
     ];
 
@@ -19,6 +20,7 @@ class Milling extends Model
         'price_retail' => 'decimal:2',
         'price_dealer' => 'decimal:2',
         'price_private' => 'decimal:2',
+        'price_coloring' => 'decimal:2',
     ];
 
     protected $appends = ['display_name'];
@@ -37,6 +39,7 @@ class Milling extends Model
             'retail' => (float) ($this->price_retail ?? 0),
             'dealer' => (float) ($this->price_dealer ?? 0),
             'private' => (float) ($this->price_private ?? 0),
+            'coloring' => (float) ($this->price_coloring ?? 0),
         };
     }
 
@@ -46,6 +49,7 @@ class Milling extends Model
             'retail' => $this->price_retail !== null,
             'dealer' => $this->price_dealer !== null,
             'private' => $this->price_private !== null,
+            'coloring' => $this->price_coloring !== null,
         };
     }
 

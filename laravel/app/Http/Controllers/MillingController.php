@@ -37,6 +37,7 @@ class MillingController extends Controller
             'price_retail' => 'nullable|numeric',
             'price_dealer' => 'nullable|numeric',
             'price_private' => 'nullable|numeric',
+            'price_coloring' => 'nullable|numeric',
         ]);
 
         Milling::create($validated);
@@ -74,6 +75,7 @@ class MillingController extends Controller
             'price_retail' => 'nullable|numeric',
             'price_dealer' => 'nullable|numeric',
             'price_private' => 'nullable|numeric',
+            'price_coloring' => 'nullable|numeric',
         ]);
 
         $milling->update($validated);

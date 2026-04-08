@@ -65,6 +65,11 @@
                             <input type="text" name="price_private" value="{{ old('price_private', $milling->price_private) }}"
                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Цена (Сырые)</label>
+                            <input type="text" name="price_coloring" value="{{ old('price_coloring', $milling->price_coloring) }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
                     </div>
 
                     <div class="mt-6 flex items-center justify-between border-t pt-4">

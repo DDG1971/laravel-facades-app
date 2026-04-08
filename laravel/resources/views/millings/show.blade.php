@@ -11,6 +11,7 @@
             <p><strong>Розничная цена:</strong> {{ $milling->price_retail ?? '—' }}</p>
             <p><strong>Цена для дилеров:</strong> {{ $milling->price_dealer ?? '—' }}</p>
             <p><strong>Цена для физ. лиц:</strong> {{ $milling->price_private ?? '—' }}</p>
+            <p><strong>Цена для физ. лиц:</strong> {{ $milling->price_coloring ?? '—' }}</p>
         </div>
 
         <div class="mt-4 flex gap-4">

@@ -633,14 +633,14 @@ class OrderController extends Controller
         $order->load(['items.drilling', 'items.facadeType', 'items.thickness']);
         if ($request->has('price_group')) {
             $newGroup = $request->input('price_group');
-            if (in_array($newGroup, ['retail', 'dealer', 'private'])) {
+            if (in_array($newGroup, ['retail', 'dealer', 'private','coloring'])) {
                 $order->update(['price_group' => $newGroup]);
             }
         }
         // Теперь $priceGroup всегда берется из базы (уже обновленный или старый)
         $priceGroup = $order->price_group;
 
-        $allowed = ['retail', 'dealer', 'private'];
+        $allowed = ['retail', 'dealer', 'private','coloring'];
         if (!in_array($priceGroup, $allowed, true)) {
             $priceGroup = 'retail';  // дефолт
         }
