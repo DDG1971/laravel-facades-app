@@ -237,7 +237,10 @@ public function milling()
             } else {
                 // Для обычных фасадов (m2) и других штучных изделий (piece)
                 $rate += ($this->order->coatingType->price ?? 0);
-                $rate += ($this->thickness?->price ?? 0);
+                // Прибавляем цену за толщину ТОЛЬКО если это НЕ группа 'coloring'
+                if ($priceGroup !== 'coloring') {
+                    $rate += ($this->thickness?->price ?? 0);
+                }
             }
             if ($this->coating_mode == 2) {
                 $rate += 5; // Если "Частич", ставка растет на 5
