@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Box;
 /**
  * @property int $status_id
  * @property int $customer_id
@@ -132,6 +133,11 @@ class Order extends Model
             : $this->calculateTotal($group);
 
         return max(0, $total - ($this->paid_amount ?? 0));
+    }
+
+    public function boxes()
+    {
+        return $this->hasMany(Box::class);
     }
 
 

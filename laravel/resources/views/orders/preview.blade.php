@@ -167,6 +167,12 @@
             <button onclick="window.print()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                 Печать
             </button>
+            <!-- Упаковка только для админа и менеджера -->
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
+                <a href="{{ route('boxes.packing', $order->id) }}" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                    📦 Упаковка
+                </a>
+            @endif
 
             <!-- Логика кнопки НАЗАД для каждого типа пользователя -->
             @if(auth()->user()->hasRole('admin'))

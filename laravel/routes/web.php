@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BoxController;
 use App\Http\Controllers\CoatingTypeController;
 use App\Http\Controllers\ColorCatalogController;
 use App\Http\Controllers\ColorCodeController;
@@ -49,6 +50,19 @@ Route::middleware('auth')->group(function () {
     Route::delete('/order-items/{item}', [OrderController::class, 'destroyItem'])->name('order-items.destroy');
     Route::get('/orders/{order}/preview', [OrderController::class, 'preview'])->name('orders.preview');
     Route::get('/orders/{order}/saw', [OrderController::class, 'saw'])->name('orders.saw');
+
+
+    // Упаковка и печать (admin, manager)
+    Route::prefix('orders/{order}')->group(function () {
+        Route::get('boxes', [BoxController::class, 'index'])->name('boxes.index');
+        Route::get('packing', [BoxController::class, 'packing'])->name('boxes.packing');
+        Route::post('boxes', [BoxController::class, 'store'])->name('boxes.store');
+        Route::post('boxes/{box}/items', [BoxController::class, 'addItem'])->name('boxes.add-item');
+        Route::get('boxes/{box}/items', [BoxController::class, 'getItems'])->name('boxes.items');
+        Route::delete('boxes/{box}/items/{boxItem}', [BoxController::class, 'removeItem'])->name('boxes.remove-item');
+    });
+
+    Route::get('boxes/{box}/print', [BoxController::class, 'print'])->name('boxes.print');
 
 });
 
