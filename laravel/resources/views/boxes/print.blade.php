@@ -4,45 +4,162 @@
     <meta charset="utf-8">
     <title>Этикетка коробки #{{ $box->box_number }}</title>
     <style>
-        body {
-            font-family: monospace;
-            width: 80mm;
-            margin: 0 auto;
-            padding: 2mm;
+        /* Сброс отступов */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Размер этикетки: 150x100 мм */
+        @page {
+            size: 150mm 100mm;
+            margin: 0;
         }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            width: 146mm;  /* Чуть меньше для гарантированного попадания */
+            height: 96mm;
+            margin: 2mm;
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
         .label {
             border: 1px dashed #000;
-            padding: 3mm;
+            padding: 4mm;
+            height: 100%;
         }
-        h3 { margin: 0 0 2mm; }
-        hr { border-top: 1px dashed #999; margin: 3mm 0; }
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 1mm 0; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 3mm;
+        }
+
+        .order-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .company {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 2mm 0;
+        }
+
+        .client-number {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 3mm;
+        }
+
+        .box-number {
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+            margin: 4mm 0;
+            background-color: #f0f0f0;
+            padding: 2mm;
+            border-radius: 2mm;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px dashed #999;
+            margin: 3mm 0;
+        }
+
+        table {
+            width: 100%;
+            font-size: 14px;
+            border-collapse: collapse;
+            margin-bottom: 3mm;
+        }
+
+        td {
+            padding: 1.5mm 2mm;
+        }
+
+        td:first-child {
+            color: #555;
+            width: 35%;
+        }
+
+        td:last-child {
+            font-weight: bold;
+        }
+
+        .items-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 2mm;
+        }
+
+        .item-row {
+            font-size: 14px;
+            padding: 1mm 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 3mm;
+        }
     </style>
 </head>
 <body>
 <div class="label">
-    <h3>ЗАКАЗ №{{ $box->order->queue_number }}</h3>
-    <strong>{{ $box->order->customer->company_name ?? $box->order->customer->name ?? '—' }}</strong><br>
-    <small>Клиентский №: {{ $box->order->client_order_number ?? '—' }}</small>
+    <div class="header">
+        <div class="order-number">ЗАКАЗ №{{ $box->order->queue_number }}</div>
+    </div>
+
+    <div class="company">
+        {{ $box->order->customer->company_name ?? $box->order->customer->name ?? '—' }}
+    </div>
+    <div class="client-number">
+        Клиентский №: {{ $box->order->client_order_number ?? '—' }}
+    </div>
+
     <hr>
+
     <table>
-        <tr><td>Цвет:</td><td>RAL {{ $box->order->colorCode->code ?? '—' }} ({{ $box->order->colorCatalog->name ?? '' }})</td></tr>
-        <tr><td>Покрытие:</td><td>{{ $box->order->coatingType->name ?? '—' }}</td></tr>
-        <tr><td>Фрезеровка:</td><td>{{ $box->order->milling->name ?? '—' }}</td></tr>
+        <tr>
+            <td>Цвет:</td>
+            <td>RAL {{ $box->order->colorCode->code ?? '—' }} ({{ $box->order->colorCatalog->name ?? '' }})</td>
+        </tr>
+        <tr>
+            <td>Покрытие:</td>
+            <td>{{ $box->order->coatingType->name ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td>Фрезеровка:</td>
+            <td>{{ $box->order->milling->name ?? '—' }}</td>
+        </tr>
     </table>
+
     <hr>
-    <strong>КОРОБКА {{ $box->box_number }} / {{ $box->order->boxes->count() }}</strong>
+
+    <div class="box-number">
+        КОРОБКА {{ $box->box_number }} / {{ $box->order->boxes->count() }}
+    </div>
+
     <hr>
-    <strong>Содержимое:</strong><br>
+
+    <div class="items-title">Содержимое:</div>
     @foreach($box->items as $boxItem)
-        {{ $boxItem->orderItem->facadeType->display_name ?? '—' }}
-        {{ $boxItem->orderItem->height }}x{{ $boxItem->orderItem->width }}
-        × {{ $boxItem->quantity }} шт
-        ({{ $boxItem->orderItem->thickness->value ?? 19 }} мм)<br>
+        <div class="item-row">
+            {{ $boxItem->orderItem->facadeType->display_name ?? '—' }}
+            {{ $boxItem->orderItem->height }}x{{ $boxItem->orderItem->width }}
+            × {{ $boxItem->quantity }} шт
+            ({{ $boxItem->orderItem->thickness->value ?? 19 }} мм)
+        </div>
     @endforeach
+
     <hr>
-    <strong>Всего: {{ $box->items->sum('quantity') }} шт</strong>
+
+    <div class="total">
+        Всего: {{ $box->items->sum('quantity') }} шт
+    </div>
 </div>
 </body>
 </html>
