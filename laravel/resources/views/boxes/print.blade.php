@@ -14,12 +14,9 @@
         }
 
         body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            width: 146mm;  /* Чуть меньше для гарантированного попадания */
-            height: 96mm;
+            width: 96mm;
+            height: 146mm;
             margin: 2mm;
-            font-size: 14px;
-            line-height: 1.3;
         }
 
         .label {

@@ -22,3 +22,13 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Мусорные файлы
+laravel/,
+laravel/-
+laravel/id,
+laravel/name_en,
+laravel/order-
+laravel/price
+laravel/coatingType*
+laravel/facadeType*
+laravel/thickness*
