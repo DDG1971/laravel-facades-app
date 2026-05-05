@@ -4,19 +4,20 @@
     <meta charset="utf-8">
     <title>Этикетка коробки #{{ $box->box_number }}</title>
     <style>
-        /* Сброс отступов */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* Размер этикетки: 150x100 мм */
         @page {
-            size: 150mm 100mm;
+            size: 100mm 150mm;
             margin: 0;
         }
 
         body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
             width: 96mm;
             height: 146mm;
             margin: 2mm;
+            font-size: 12px;
+            line-height: 1.3;
         }
 
         .label {
@@ -29,31 +30,31 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 3mm;
+            margin-bottom: 2mm;
         }
 
         .order-number {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
         }
 
         .company {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             margin: 2mm 0;
         }
 
         .client-number {
-            font-size: 18px;
+            font-size: 16px;
             color: #555;
-            margin-bottom: 3mm;
+            margin-bottom: 2mm;
         }
 
         .box-number {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
             text-align: center;
-            margin: 4mm 0;
+            margin: 3mm 0;
             background-color: #f0f0f0;
             padding: 2mm;
             border-radius: 2mm;
@@ -65,40 +66,55 @@
             margin: 3mm 0;
         }
 
-        table {
+        .info-table {
             width: 100%;
-            font-size: 14px;
+            font-size: 12px;
             border-collapse: collapse;
             margin-bottom: 3mm;
         }
 
-        td {
-            padding: 1.5mm 2mm;
+        .info-table td {
+            padding: 1mm 2mm;
         }
 
-        td:first-child {
+        .info-table td:first-child {
             color: #555;
-            width: 35%;
+            width: 25%;
         }
 
-        td:last-child {
+        .info-table td:last-child {
             font-weight: bold;
         }
 
         .items-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             margin-bottom: 2mm;
         }
 
-        .item-row {
-            font-size: 14px;
-            padding: 1mm 0;
-            border-bottom: 1px dotted #ccc;
+        /* Таблица содержимого */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .items-table th {
+            background-color: #e0e0e0;
+            border: 1.5px solid #000;  /* было 1px solid #999 */
+            padding: 1.5mm 1mm;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .items-table td {
+            border: 1.5px solid #000;  /* было 1px solid #999 */
+            padding: 1mm;
+            text-align: center;
         }
 
         .total {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin-top: 3mm;
         }
@@ -119,14 +135,10 @@
 
     <hr>
 
-    <table>
+    <table class="info-table">
         <tr>
             <td>Цвет:</td>
-            <td>RAL {{ $box->order->colorCode->code ?? '—' }} ({{ $box->order->colorCatalog->name ?? '' }})</td>
-        </tr>
-        <tr>
-            <td>Покрытие:</td>
-            <td>{{ $box->order->coatingType->name ?? '—' }}</td>
+            <td>RAL {{ $box->order->colorCode->code ?? '—' }} {{ $box->order->coatingType->name ?? '' }}</td>
         </tr>
         <tr>
             <td>Фрезеровка:</td>
@@ -143,14 +155,29 @@
     <hr>
 
     <div class="items-title">Содержимое:</div>
-    @foreach($box->items as $boxItem)
-        <div class="item-row">
-            {{ $boxItem->orderItem->facadeType->display_name ?? '—' }}
-            {{ $boxItem->orderItem->height }}x{{ $boxItem->orderItem->width }}
-            × {{ $boxItem->quantity }} шт
-            ({{ $boxItem->orderItem->thickness->value ?? 19 }} мм)
-        </div>
-    @endforeach
+
+    <table class="items-table">
+        <thead>
+        <tr>
+            <th>Тип фасада</th>
+            <th>Высота</th>
+            <th>Ширина</th>
+            <th>Кол-во</th>
+            <th>Толщ.</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach($box->items as $boxItem)
+            <tr>
+                <td>{{ $boxItem->orderItem->facadeType->display_name ?? '—' }}</td>
+                <td>{{ $boxItem->orderItem->height }}</td>
+                <td>{{ $boxItem->orderItem->width }}</td>
+                <td>{{ $boxItem->quantity }}</td>
+                <td>{{ $boxItem->orderItem->thickness->value ?? 19 }} мм</td>
+            </tr>
+        @endforeach
+        </tbody>
+    </table>
 
     <hr>
 
