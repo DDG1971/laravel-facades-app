@@ -195,6 +195,12 @@
                     На пилу
                 </a>
             @endif
+
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
+                <a href="{{ route('boxes.packing-list', $order->id) }}" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                    📋 Упаковка списком
+                </a>
+            @endif
         </div>
     </div>
 </x-app-layout>

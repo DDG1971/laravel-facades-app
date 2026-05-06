@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderItemsList();
     loadBoxesContent();
+    initDeleteButtons();
 });
 
 // Отрисовка списка деталей
@@ -209,9 +210,14 @@ function addBoxToUI(box) {
         <div class="bg-white shadow rounded p-4 box-dropzone" data-box-id="${box.id}">
             <div class="flex justify-between items-center mb-3">
                 <h3 class="font-semibold">Коробка #${box.box_number}</h3>
-                <a href="/boxes/${box.id}/print" class="text-blue-600 hover:underline text-sm" target="_blank">
-                    🖨️ Печать
-                </a>
+                <div class="flex gap-2">
+                    <a href="/boxes/${box.id}/print" class="text-blue-600 hover:underline text-sm" target="_blank">
+                        🖨️
+                    </a>
+                    <button class="delete-box text-red-500 hover:text-red-700 text-sm" data-box-id="${box.id}">
+                        🗑️
+                    </button>
+                </div>
             </div>
             <div class="box-items min-h-[150px] border border-dashed border-gray-300 rounded p-2 bg-gray-50">
                 <p class="text-gray-400 text-sm">Перетащите детали сюда</p>
@@ -220,12 +226,10 @@ function addBoxToUI(box) {
     `;
     container.insertAdjacentHTML('beforeend', boxHtml);
     initDragEvents();
+    initDeleteButtons();
 
-    // Обновляем счётчик коробок
-    const countSpan = document.getElementById('boxesCount');
-    if (countSpan) {
-        countSpan.textContent = document.querySelectorAll('.box-dropzone').length;
-    }
+    // Обновляем счётчик
+    updateBoxesCount();
 }
 
 
@@ -273,6 +277,7 @@ async function loadBoxContent(boxId) {
         });
     });
 }
+
 async function returnItemToOrder(boxId, boxItemId) {
     const orderId = document.querySelector('meta[name="order-id"]')?.content;
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -289,6 +294,43 @@ async function returnItemToOrder(boxId, boxItemId) {
     if (data.status === 'ok') {
         // Перезагружаем страницу для простоты (или можно динамически обновить)
         location.reload();
+    }
+}
+function initDeleteButtons() {
+    document.querySelectorAll('.delete-box').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm('Удалить эту коробку? Детали вернутся в список.')) return;
+
+            const boxId = btn.dataset.boxId;
+            const orderId = document.querySelector('meta[name="order-id"]')?.content;
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            const response = await fetch(`/orders/${orderId}/boxes/${boxId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (data.status === 'ok') {
+                // Удаляем коробку из DOM
+                document.querySelector(`.box-dropzone[data-box-id="${boxId}"]`).remove();
+                // Перезагружаем страницу чтобы обновить список деталей
+                location.reload();
+            }
+        });
+    });
+}
+
+
+
+function updateBoxesCount() {
+    const countSpan = document.getElementById('boxesCount');
+    if (countSpan) {
+        countSpan.textContent = document.querySelectorAll('.box-dropzone').length;
     }
 }
 

@@ -152,8 +152,37 @@ class BoxController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Box $box)
+    public function destroy(Order $order, Box $box)
     {
-        //
+        // Удаляем только если коробка принадлежит этому заказу
+        if ($box->order_id !== $order->id) {
+            return response()->json(['status' => 'error', 'message' => 'Нет доступа'], 403);
+        }
+
+        $box->delete();
+
+        return response()->json(['status' => 'ok']);
+    }
+    public function packingList(Order $order)
+    {
+        $order->load('items.facadeType', 'items.thickness');
+
+        // Считаем, сколько строк помещается на этикетку (примерно 20-25 с шапкой)
+        $perPage = 20;
+        $totalItems = $order->items->count();
+        $totalPages = ceil($totalItems / $perPage);
+
+        return view('boxes.packing-list', compact('order', 'totalPages'));
+    }
+    public function packingListPrint(Request $request, Order $order)
+    {
+        $order->load('items.facadeType', 'items.thickness');
+
+        $perPage = 20;
+        $page = $request->get('page', 1);
+        $items = $order->items->forPage($page, $perPage);
+        $totalPages = ceil($order->items->count() / $perPage);
+
+        return view('boxes.packing-list-print', compact('order', 'items', 'page', 'totalPages'));
     }
 }

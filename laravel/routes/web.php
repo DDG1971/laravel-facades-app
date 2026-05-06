@@ -60,6 +60,9 @@ Route::middleware('auth')->group(function () {
         Route::post('boxes/{box}/items', [BoxController::class, 'addItem'])->name('boxes.add-item');
         Route::get('boxes/{box}/items', [BoxController::class, 'getItems'])->name('boxes.items');
         Route::delete('boxes/{box}/items/{boxItem}', [BoxController::class, 'removeItem'])->name('boxes.remove-item');
+        Route::delete('boxes/{box}', [BoxController::class, 'destroy'])->name('boxes.destroy');
+        Route::get('packing-list', [BoxController::class, 'packingList'])->name('boxes.packing-list');
+        Route::get('packing-list-print', [BoxController::class, 'packingListPrint'])->name('boxes.packing-list-print');
     });
 
     Route::get('boxes/{box}/print', [BoxController::class, 'print'])->name('boxes.print');
