@@ -45,9 +45,13 @@
         }
 
         .client-number {
-            font-size: 16px;
-            color: #555;
-            margin-bottom: 2mm;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .client-value {
+            font-size: 18px;
+            font-weight: bold;
         }
 
         .box-number {
@@ -130,7 +134,7 @@
         {{ $box->order->customer->company_name ?? $box->order->customer->name ?? '—' }}
     </div>
     <div class="client-number">
-        Клиентский №: {{ $box->order->client_order_number ?? '—' }}
+        Клиентский №: <span class="client-value">{{ $box->order->client_order_number ?? '—' }}</span>
     </div>
 
     <hr>
