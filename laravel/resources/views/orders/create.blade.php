@@ -54,7 +54,10 @@
                     <select id="color_catalog_id" name="color_catalog_id"
                             class="w-48 border rounded-md px-2 py-1 bg-white text-sm">
                         @foreach($colorCatalogs as $catalog)
-                            <option value="{{ $catalog->id }}">{{ $catalog->name_en }}</option>
+                            <option value="{{ $catalog->id }}"
+                                {{ old('color_catalog_id', $defaultCatalogId ?? '') == $catalog->id ? 'selected' : '' }}>
+                                {{ $catalog->name_en }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -62,12 +65,25 @@
                     <label for="color_code_id" class="block text-xs font-medium text-gray-700">Код цвета</label>
                     <select id="color_code_id" name="color_code_id"
                             class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
-                        @foreach($colors as $color)
-                            <option value="{{ $color->id }}"
-                                {{ old('color_code_id') == $color->id || $color->code == 9003 ? 'selected' : '' }}>
-                                {{ $color->code }}
-                            </option>
-                        @endforeach
+                        @if(isset($colors) && $colors->count() > 0)
+                            @php
+                                $groupedColors = $colors->groupBy(function($color) {
+                                    return $color->colorCatalog->name_en;
+                                });
+                            @endphp
+                            @foreach($groupedColors as $catalogName => $catalogColors)
+                                <optgroup label="{{ $catalogName }}">
+                                    @foreach($catalogColors as $color)
+                                        <option value="{{ $color->id }}"
+                                            {{ old('color_code_id', $defaultColorId ?? '') == $color->id ? 'selected' : '' }}>
+                                            {{ $color->code }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        @else
+                            <option disabled>Нет доступных цветов</option>
+                        @endif
                     </select>
                 </div>
                 <div class="p-2">

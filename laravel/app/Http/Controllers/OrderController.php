@@ -84,12 +84,26 @@ class OrderController extends Controller
         $customers = Customer::all();
         $statuses = Status::all();
         $facadeTypes = FacadeType::all();
-        $colors = ColorCode::all();
-        $colorCatalogs = ColorCatalog::all();
+
+        // 🔥 Получаем цвета с сортировкой по каталогу и коду
+        $colors = ColorCode::with('colorCatalog')
+            ->join('color_catalogs', 'color_codes.color_catalog_id', '=', 'color_catalogs.id')
+            ->orderBy('color_catalogs.name_en')  // Сначала по имени каталога (RAL, NCS, WCP...)
+            ->orderBy('color_codes.code')         // Потом по коду цвета внутри каталога
+            ->select('color_codes.*')              // Берём только поля из color_codes
+            ->get();
+
+        $colorCatalogs = ColorCatalog::orderBy('name_en')->get();  // Тоже отсортируем каталоги
         $coatingTypes = CoatingType::all();
         $drillings = Drilling::all();
         $millings = Milling::all();
         $thicknesses = Thickness::ordered()->get();
+
+        // Находим ID каталога RAL (где name_en = 'RAL')
+        $defaultCatalogId = ColorCatalog::where('name_en', 'RAL')->value('id');
+
+        // Находим ID цвета 9003
+        $defaultColorId = ColorCode::where('code', '9003')->value('id');
 
         return view('orders.create', compact(
             'customers',
@@ -100,7 +114,9 @@ class OrderController extends Controller
             'coatingTypes',
             'drillings',
             'millings',
-            'thicknesses'
+            'thicknesses',
+            'defaultCatalogId',
+            'defaultColorId'
         ));
     }
 
