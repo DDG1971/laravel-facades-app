@@ -33,9 +33,37 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        // запрос
+        // --- ОЧИСТКА СЕССИИ ПРИ СБРОСЕ ---
+        if ($request->has('clear')) {
+            session()->forget('orders_filters');
+            session()->forget('orders_back_url');
+            return redirect()->route('admin.orders.index');
+        }
+
+        // --- СОХРАНЕНИЕ ФИЛЬТРОВ В СЕССИЮ ---
+        // Проверяем, есть ли какие-то параметры фильтрации в запросе
+        if ($request->anyFilled(['client_order_number', 'customer_id', 'color_code_id', 'milling_id'])) {
+            // Сохраняем только заполненные параметры
+            $filters = $request->only(['client_order_number', 'customer_id', 'color_code_id', 'milling_id']);
+            // Удаляем пустые значения
+            $filters = array_filter($filters, function($value) {
+                return !empty($value) || $value === '0' || $value === 0;
+            });
+            session()->put('orders_filters', $filters);
+        }
+
+        // Если в GET нет параметров, но в сессии есть - используем из сессии
+        if (!request()->hasAny(['client_order_number', 'customer_id', 'color_code_id', 'milling_id']) && session()->has('orders_filters')) {
+            $savedFilters = session('orders_filters');
+            // Подставляем сохраненные фильтры в request
+            foreach ($savedFilters as $key => $value) {
+                request()->merge([$key => $value]);
+            }
+        }
+
+        // --- ОСНОВНОЙ ЗАПРОС (БЕЗ ИЗМЕНЕНИЙ) ---
         $query = Order::query()->with([
-            'customer:id,company_name', // Берем только нужные поля
+            'customer:id,company_name',
             'status',
             'colorCatalog',
             'colorCode',
@@ -43,7 +71,7 @@ class OrderController extends Controller
             'milling'
         ]);
 
-        // Поиск по номеру заказа клиента (LIKE для частичного совпадения)
+        // Поиск по номеру заказа клиента
         if ($request->filled('client_order_number')) {
             $query->where('client_order_number', 'like', '%' . $request->client_order_number . '%');
         }
@@ -55,16 +83,16 @@ class OrderController extends Controller
         if ($request->filled('color_code_id')) {
             $query->where('color_code_id', $request->color_code_id);
         }
+
         // Поиск по фрезеровке
         if ($request->filled('milling_id')) {
             $query->where('milling_id', $request->milling_id);
         }
+
         // Исключаю заказы со статусом paint_shop
         $query->whereHas('status', function ($q) {
             $q->where('name', '!=', 'paint_shop');
         });
-
-        // --- КОНЕЦ ФИЛЬТРОВ ---
 
         $orders = $query->orderByDesc('queue_number')->paginate(50);
 
@@ -365,6 +393,49 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
+        // --- СОХРАНЯЕМ URL ДЛЯ ВОЗВРАТА ---
+        $previousUrl = url()->previous();
+
+        // Если предыдущий URL не равен текущему и не пустой
+        if ($previousUrl && $previousUrl != url()->current()) {
+            session()->put('orders_back_url', $previousUrl);
+
+            // Извлекаем параметры фильтрации
+            $queryParams = [];
+            parse_str(parse_url($previousUrl, PHP_URL_QUERY) ?? '', $queryParams);
+
+            if (!empty($queryParams)) {
+                $allowedFilters = ['client_order_number', 'customer_id', 'color_code_id', 'milling_id'];
+                $filters = array_intersect_key($queryParams, array_flip($allowedFilters));
+
+                $filters = array_filter($filters, function($value) {
+                    return !empty($value) || $value === '0' || $value === 0;
+                });
+
+                if (!empty($filters)) {
+                    session()->put('orders_filters', $filters);
+                }
+            }
+        } else {
+            // Если пришли напрямую, создаем URL с фильтрами из сессии
+            $routeName = 'admin.orders.index';
+            if (auth()->user()->hasRole('manager')) {
+                $routeName = 'manager.orders.index';
+            } elseif (auth()->user()->hasRole('customer')) {
+                $routeName = 'orders.index';
+            }
+
+            $backUrl = route($routeName);
+            if (session()->has('orders_filters')) {
+                $filters = session('orders_filters');
+                if (!empty($filters)) {
+                    $backUrl = $backUrl . '?' . http_build_query($filters);
+                }
+            }
+            session()->put('orders_back_url', $backUrl);
+        }
+
+        // --- ОСНОВНОЙ КОД ---
         $order->load(
             'items',
             'customer',

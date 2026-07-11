@@ -4,6 +4,16 @@
     </x-slot>
 
     <x-slot name="header">
+        <!-- 👇 ДОБАВЬТЕ ЭТОТ БЛОК ЗДЕСЬ, ПЕРЕД ВСЕМ ОСТАЛЬНЫМ -->
+        @php
+            // Если в сессии есть фильтры, но в запросе их нет - подставляем их для отображения в форме
+            if (!request()->hasAny(['client_order_number', 'customer_id', 'color_code_id', 'milling_id']) && session()->has('orders_filters')) {
+                foreach (session('orders_filters') as $key => $value) {
+                    request()->merge([$key => $value]);
+                }
+            }
+        @endphp
+            <!-- 👆 КОНЕЦ ДОБАВЛЕННОГО БЛОКА -->
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Список заказов
@@ -57,7 +67,7 @@
                 </button>
 
                 @if(request()->anyFilled(['customer_id', 'color_code_id','milling_id','client_order_number']))
-                    <a href="{{ route('admin.orders.index') }}"
+                    <a href="{{ route('admin.orders.index') }}?clear=true"
                        class="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600">
                         Сбросить
                     </a>

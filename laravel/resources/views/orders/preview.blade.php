@@ -174,17 +174,52 @@
                 </a>
             @endif
 
-            <!-- Логика кнопки НАЗАД для каждого типа пользователя -->
+            @php
+                // Получаем сохраненный URL или дефолтный
+                $backUrl = session('orders_back_url');
+
+                // Если URL не сохранен или это текущий URL, создаем маршрут
+                if (!$backUrl || $backUrl == url()->current()) {
+                    // Определяем маршрут в зависимости от роли
+                    if (auth()->user()->hasRole('admin')) {
+                        $backUrl = route('admin.orders.index');
+                    } elseif (auth()->user()->hasRole('manager')) {
+                        $backUrl = route('manager.orders.index');
+                    } elseif (auth()->user()->hasRole('customer')) {
+                        $backUrl = route('orders.index');
+                    } else {
+                        $backUrl = route('admin.orders.index');
+                    }
+
+                    // Если есть сохраненные фильтры - добавляем их к URL
+                    if (session()->has('orders_filters')) {
+                        $filters = session('orders_filters');
+                        if (!empty($filters)) {
+                            $backUrl = $backUrl . '?' . http_build_query($filters);
+                        }
+                    }
+                } else {
+                    // Проверяем, есть ли в сохраненном URL параметры фильтрации
+                    if (!str_contains($backUrl, '?') && session()->has('orders_filters')) {
+                        $filters = session('orders_filters');
+                        if (!empty($filters)) {
+                            $backUrl = $backUrl . '?' . http_build_query($filters);
+                        }
+                    }
+                }
+            @endphp
+
+                <!-- Логика кнопки НАЗАД для каждого типа пользователя -->
             @if(auth()->user()->hasRole('admin'))
-                <a href="{{ route('admin.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     Назад к заказам
                 </a>
             @elseif(auth()->user()->hasRole('manager'))
-                <a href="{{ route('manager.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     Назад к заказам
                 </a>
             @elseif(auth()->user()->hasRole('customer'))
-                <a href="{{ route('orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     Назад к заказам
                 </a>
             @endif
