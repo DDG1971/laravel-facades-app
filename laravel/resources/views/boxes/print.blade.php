@@ -142,7 +142,7 @@
     <table class="info-table">
         <tr>
             <td>Цвет:</td>
-            <td>RAL {{ $box->order->colorCode->code ?? '—' }} {{ $box->order->coatingType->name ?? '' }}</td>
+            <td>{{ $box->order->colorCatalog->name_en ?? '' }} {{ $box->order->colorCode->code ?? '' }} {{ $box->order->coatingType->name ?? '' }}</td>
         </tr>
         <tr>
             <td>Фрезеровка:</td>

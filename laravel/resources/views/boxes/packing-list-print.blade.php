@@ -139,7 +139,7 @@
     <hr>
 
     <div class="info-row">
-        Цвет: RAL {{ $order->colorCode->code ?? '—' }} {{ $order->coatingType->name ?? '' }}
+        Цвет: {{ $order->colorCatalog->name_en ?? '' }} {{ $order->colorCode->code ?? '' }} {{ $order->coatingType->name ?? '' }}
         &nbsp;|&nbsp;
         Фрезеровка: {{ $order->milling->name ?? '—' }}
     </div>
