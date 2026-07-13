@@ -210,21 +210,22 @@
             @endphp
 
                 <!-- Логика кнопки НАЗАД для каждого типа пользователя -->
-            @if(auth()->user()->hasRole('admin'))
-                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Назад к заказам
-                </a>
-            @elseif(auth()->user()->hasRole('manager'))
-                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Назад к заказам
-                </a>
-            @elseif(auth()->user()->hasRole('customer'))
-                <a href="{{ $backUrl }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Назад к заказам
-                </a>
-            @endif
 
-            <!-- Кнопка НА ПИЛУ только для админа и менеджера -->
+                @if(auth()->user()->hasRole('admin'))
+                    <a href="{{ route('admin.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Назад к заказам
+                    </a>
+                @elseif(auth()->user()->hasRole('manager'))
+                    <a href="{{ route('manager.orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Назад к заказам
+                    </a>
+                @elseif(auth()->user()->hasRole('customer'))
+                    <a href="{{ route('orders.index') }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Назад к заказам
+                    </a>
+                @endif
+
+                <!-- Кнопка НА ПИЛУ только для админа и менеджера -->
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
                 <a href="{{ route('orders.saw', $order->id) }}" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
                     На пилу
