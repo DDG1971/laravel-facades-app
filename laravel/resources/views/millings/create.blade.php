@@ -1,15 +1,12 @@
 <x-app-layout>
-        <x-slot name="head">
-            <x-assets/>
-        </x-slot>
-
     <x-slot name="head">
-        <x-assets />
+        <x-assets/>
     </x-slot>
 
     <x-slot name="header">
-    <h1 class="text-2xl font-bold mb-6">Добавить новую фрезеровку</h1>
+        <h1 class="text-2xl font-bold mb-6">Добавить новую фрезеровку</h1>
     </x-slot>
+
     @if ($errors->any())
         <div class="text-red-600 mb-4">
             <ul>
@@ -20,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('millings.store') }}" method="POST" class="space-y-4">
+    <form action="{{ route('millings.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         @csrf
 
         <div>
@@ -41,6 +38,16 @@
                    value="{{ old('name_en') }}" class="border px-2 py-1 w-full">
         </div>
 
+        {{-- Новое поле: загрузка SVG --}}
+        <div>
+            <label for="svg_file" class="block text-sm font-medium text-gray-700">
+                Чертёж фрезеровки (SVG или PNG)
+            </label>
+            <input type="file" id="svg_file" name="svg_file" accept=".svg,.png,.jpg,.jpeg"
+                   class="border px-2 py-1 w-full">
+            <p class="text-xs text-gray-500 mt-1">Рекомендуется SVG. Максимальный размер: 2 МБ.</p>
+        </div>
+
         <div>
             <label for="price_retail">Розничная цена</label>
             <input type="text" id="price_retail" name="price_retail"
@@ -58,12 +65,12 @@
             <input type="text" id="price_private" name="price_private"
                    value="{{ old('price_private') }}" class="border px-2 py-1 w-full">
         </div>
+
         <div>
             <label for="price_coloring">Цена сырых</label>
             <input type="text" id="price_coloring" name="price_coloring"
                    value="{{ old('price_coloring') }}" class="border px-2 py-1 w-full">
         </div>
-
 
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
             ➕ Добавить

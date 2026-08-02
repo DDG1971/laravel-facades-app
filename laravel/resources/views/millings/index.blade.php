@@ -19,7 +19,7 @@
             <tr class="bg-gray-100">
                 <th class="border px-2 py-1">Код</th>
                 <th class="border px-2 py-1">Название</th>
-              {{--  <th class="border px-2 py-1">Англ. имя</th>--}}
+                <th class="border px-2 py-1">Чертёж</th>
                 <th class="border px-2 py-1">Дилерская</th>
                 <th class="border px-2 py-1">Розничная</th>
                 <th class="border px-2 py-1">Физ. лица</th>
@@ -32,7 +32,15 @@
                 <tr>
                     <td class="border px-2 py-1">{{ $milling->code }}</td>
                     <td class="border px-2 py-1">{{ $milling->name }}</td>
-                   {{-- <td class="border px-2 py-1">{{ $milling->name_en }}</td>--}}
+                    <td class="border px-2 py-1 text-center">
+                        @if($milling->svg_path)
+                            <a href="{{ asset('storage/' . $milling->svg_path) }}" target="_blank" title="Посмотреть чертёж">
+                                👁️
+                            </a>
+                        @else
+                            <span class="text-gray-400">—</span>
+                        @endif
+                    </td>
                     <td class="border px-2 py-1">{{ $milling->price_dealer }}</td>
                     <td class="border px-2 py-1">{{ $milling->price_retail }}</td>
                     <td class="border px-2 py-1">{{ $milling->price_private }}</td>

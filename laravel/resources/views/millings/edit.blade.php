@@ -23,12 +23,11 @@
                     </div>
                 @endif
 
-                <form action="{{ route('millings.update', $milling) }}" method="POST" class="space-y-4">
+                <form action="{{ route('millings.update', $milling) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     @method('PUT')
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Основная информация -->
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Название (RU)</label>
                             <input type="text" name="name" value="{{ old('name', $milling->name) }}"
@@ -47,7 +46,22 @@
                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
 
-                        <!-- Цены -->
+                        {{-- Чертёж фрезеровки --}}
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Чертёж фрезеровки (SVG или PNG)</label>
+                            @if($milling->svg_path)
+                                <div class="mb-2">
+                                    <img src="{{ asset('storage/' . $milling->svg_path) }}"
+                                         alt="Чертёж {{ $milling->name }}"
+                                         class="max-w-[200px] border rounded">
+                                    <p class="text-xs text-gray-500 mt-1">Текущий чертёж. Загрузите новый, чтобы заменить.</p>
+                                </div>
+                            @endif
+                            <input type="file" name="svg_file" accept=".svg,.png,.jpg,.jpeg"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p class="text-xs text-gray-500 mt-1">Рекомендуется SVG. Максимальный размер: 2 МБ.</p>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Цена (Дилер)</label>
                             <input type="text" name="price_dealer" value="{{ old('price_dealer', $milling->price_dealer) }}"
@@ -86,4 +100,3 @@
         </div>
     </div>
 </x-app-layout>
-

@@ -322,6 +322,74 @@ const updatePaintShop = (orderId, shopId) => {
 window.updatePaintShop = updatePaintShop;
 
 
+// Предпросмотр чертежа фрезеровки
+window.toggleMillingPreview = function() {
+    const select = document.getElementById('milling_id');
+    const btn = document.getElementById('milling-preview-btn');
+    if (!select || !btn) return;
 
+    const selected = select.options[select.selectedIndex];
+
+    if (selected && selected.dataset.svg) {
+        btn.classList.remove('hidden');
+    } else {
+        btn.classList.add('hidden');
+    }
+};
+
+window.showMillingPreview = function() {
+    const select = document.getElementById('milling_id');
+    if (!select) return;
+
+    const selected = select.options[select.selectedIndex];
+    const svg = selected ? selected.dataset.svg : '';
+
+    const modal = document.getElementById('milling-modal');
+    const title = document.getElementById('milling-modal-title');
+    const image = document.getElementById('milling-modal-image');
+    const empty = document.getElementById('milling-modal-empty');
+
+    if (!modal || !title || !image || !empty) return;
+
+    modal.classList.remove('hidden');
+    title.textContent = 'Чертёж: ' + (selected ? selected.text : '');
+
+    if (svg) {
+        image.src = svg;
+        image.classList.remove('hidden');
+        empty.classList.add('hidden');
+    } else {
+        image.classList.add('hidden');
+        empty.classList.remove('hidden');
+    }
+};
+
+window.closeMillingModal = function() {
+    const modal = document.getElementById('milling-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+// Закрытие по клику на фон
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'milling-modal') {
+        closeMillingModal();
+    }
+});
+window.showMillingCatalog = function() {
+    const modal = document.getElementById('milling-catalog-modal');
+    if (modal) modal.classList.remove('hidden');
+};
+
+window.closeMillingCatalog = function() {
+    const modal = document.getElementById('milling-catalog-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+// Закрытие каталога по клику на фон
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'milling-catalog-modal') {
+        closeMillingCatalog();
+    }
+});
 
 

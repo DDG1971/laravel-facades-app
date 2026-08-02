@@ -20,7 +20,8 @@
             </h2>
 
             <!-- Форма фильтрации -->
-            <form method="GET" action="{{ route('admin.orders.index') }}" class="flex flex-wrap gap-2">
+
+            <form method="GET" action="{{ route('admin.orders.index') }}" class="flex flex-nowrap gap-2">
                 <!-- Кнопка создания заказа -->
                 <a href="{{ route('admin.orders.create') }}"
                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
@@ -52,6 +53,7 @@
                         </option>
                     @endforeach
                 </select>
+
                 <!-- Выбор фрезеровки -->
                 <select name="milling_id" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
                     <option value="">Все фрезеровки</option>
@@ -64,6 +66,13 @@
 
                 <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">
                     Найти
+                </button>
+
+                {{-- Каталог фрезеровок --}}
+                <button type="button"
+                        onclick="showMillingCatalog()"
+                        class="bg-purple-500 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-600">
+                    📋 Каталог фрезеровок
                 </button>
 
                 @if(request()->anyFilled(['customer_id', 'color_code_id','milling_id','client_order_number']))
@@ -279,5 +288,27 @@
             </div>
         </div>
     </div>
-
+    {{-- Каталог фрезеровок --}}
+    <div id="milling-catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[80vh] overflow-auto relative">
+            <button onclick="closeMillingCatalog()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+            <h3 class="text-lg font-semibold mb-4">Каталог фрезеровок</h3>
+            <div class="space-y-4">
+                @foreach($millings as $milling)
+                    <div class="border rounded p-3 flex items-start gap-4">
+                        <div class="flex-1">
+                            <h4 class="font-semibold">{{ $milling->name }}</h4>
+                            @if($milling->svg_path)
+                                <img src="{{ asset('storage/' . $milling->svg_path) }}"
+                                     alt="{{ $milling->name }}"
+                                     class="max-w-[400px] mt-2 border rounded">
+                            @else
+                                <p class="text-gray-400 text-sm mt-2">Чертёж не загружен</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </x-app-layout>

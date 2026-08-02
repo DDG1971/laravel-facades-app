@@ -8,11 +8,12 @@
             Список заказов — {{ $customer->company_name }}
         </h2>
         <form method="GET" action="{{ route('orders.index') }}" class="flex flex-wrap gap-2">
-            <!-- Кнопка создания заказа для клиента -->
+            <!-- Кнопка создания заказа -->
             <a href="{{ route('orders.create') }}"
                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 ➕ Новый заказ
             </a>
+
             <!-- Поиск по номеру -->
             <input type="text" name="client_order_number" value="{{ request('client_order_number') }}"
                    placeholder="№заказа клиента"
@@ -27,6 +28,7 @@
                     </option>
                 @endforeach
             </select>
+
             <!-- Выбор фрезеровки -->
             <select name="milling_id"
                     class="text-sm border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
@@ -38,7 +40,7 @@
                 @endforeach
             </select>
 
-            <!-- НОВЫЙ ВЫБОР СТАТУСА -->
+            <!-- Выбор статуса -->
             <select name="status_id" class="text-sm border-gray-300 rounded-md shadow-sm">
                 <option value="">Все статусы</option>
                 @foreach($statuses as $status)
@@ -52,8 +54,15 @@
                 Найти
             </button>
 
-            {{-- Обновленная кнопка сброса (добавил status_id) --}}
-            @if(request()->anyFilled(['color_code_id', 'client_order_number','milling_id', 'status_id']))
+            {{-- Каталог фрезеровок --}}
+            <button type="button"
+                    onclick="showMillingCatalog()"
+                    class="bg-purple-500 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-600">
+                📋 Каталог фрезеровок
+            </button>
+
+            {{-- Сброс --}}
+            @if(request()->anyFilled(['color_code_id', 'client_order_number', 'milling_id', 'status_id']))
                 <a href="{{ route('orders.index') }}"
                    class="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600">
                     Сбросить
@@ -211,6 +220,29 @@
             </div>
         </div>
 
+    </div>
+    {{-- Каталог фрезеровок --}}
+    <div id="milling-catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[80vh] overflow-auto relative">
+            <button onclick="closeMillingCatalog()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+            <h3 class="text-lg font-semibold mb-4">Каталог фрезеровок</h3>
+            <div class="space-y-4">
+                @foreach($millings as $milling)
+                    <div class="border rounded p-3 flex items-start gap-4">
+                        <div class="flex-1">
+                            <h4 class="font-semibold">{{ $milling->name }}</h4>
+                            @if($milling->svg_path)
+                                <img src="{{ asset('storage/' . $milling->svg_path) }}"
+                                     alt="{{ $milling->name }}"
+                                     class="max-w-[400px] mt-2 border rounded">
+                            @else
+                                <p class="text-gray-400 text-sm mt-2">Чертёж не загружен</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     </div>
 </x-app-layout>
 

@@ -119,13 +119,40 @@
                 </div>
                 <div class="p-2">
                     <label for="milling_id" class="block text-xs font-medium text-gray-700">Фрезеровка</label>
-                    <select id="milling_id" name="milling_id"
-                            class="w-64 border rounded-md px-2 py-1 bg-white text-sm">
-                        <option value="">—</option>
-                        @foreach($millings as $milling)
-                            <option value="{{ $milling->id }}">{{ $milling->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <select id="milling_id" name="milling_id"
+                                class="w-64 border rounded-md px-2 py-1 bg-white text-sm"
+                                onchange="toggleMillingPreview()">
+                            <option value="">—</option>
+                            @foreach($millings as $milling)
+                                <option value="{{ $milling->id }}"
+                                        data-svg="{{ $milling->svg_path ? asset('storage/' . $milling->svg_path) : '' }}">
+                                    {{ $milling->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="button" id="milling-preview-btn"
+                                class="text-gray-400 hover:text-blue-600 text-lg cursor-pointer hidden"
+                                title="Посмотреть чертёж"
+                                onclick="showMillingPreview()">
+                            👁️
+                        </button>
+                        <button type="button"
+                                class="text-sm text-blue-600 hover:underline"
+                                onclick="showMillingCatalog()">
+                            📋 Каталог
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Модальное окно --}}
+                <div id="milling-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                    <div class="bg-white rounded-lg p-4 max-w-lg max-h-[80vh] overflow-auto relative">
+                        <button onclick="closeMillingModal()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+                        <h3 class="text-lg font-semibold mb-3" id="milling-modal-title">Чертёж фрезеровки</h3>
+                        <img id="milling-modal-image" src="" alt="Чертёж" class="max-w-full">
+                        <p id="milling-modal-empty" class="text-gray-400 hidden">Для этой фрезеровки чертёж не загружен.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -173,6 +200,29 @@
         </div>
 
     </form>
+    {{-- Каталог фрезеровок --}}
+    <div id="milling-catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[80vh] overflow-auto relative">
+            <button onclick="closeMillingCatalog()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+            <h3 class="text-lg font-semibold mb-4">Каталог фрезеровок</h3>
 
+            <div class="space-y-4">
+                @foreach($millings as $milling)
+                    <div class="border rounded p-3 flex items-start gap-4">
+                        <div class="flex-1">
+                            <h4 class="font-semibold">{{ $milling->name }}</h4>
+                            @if($milling->svg_path)
+                                <img src="{{ asset('storage/' . $milling->svg_path) }}"
+                                     alt="{{ $milling->name }}"
+                                     class="max-w-[400px] mt-2 border rounded">
+                            @else
+                                <p class="text-gray-400 text-sm mt-2">Чертёж не загружен</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </x-app-layout>
 

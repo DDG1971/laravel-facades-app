@@ -14,6 +14,7 @@ class Milling extends Model
         'price_private',
         'price_coloring',
         'name_en',
+        'svg_path',
     ];
 
     protected $casts = [

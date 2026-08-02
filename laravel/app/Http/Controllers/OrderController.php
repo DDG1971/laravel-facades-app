@@ -124,7 +124,7 @@ class OrderController extends Controller
         $colorCatalogs = ColorCatalog::orderBy('name_en')->get();  // Тоже отсортируем каталоги
         $coatingTypes = CoatingType::all();
         $drillings = Drilling::all();
-        $millings = Milling::all();
+        $millings = Milling::orderBy('name')->get();
         $thicknesses = Thickness::ordered()->get();
 
         // Находим ID каталога RAL (где name_en = 'RAL')
@@ -156,7 +156,7 @@ class OrderController extends Controller
         $colorCatalogs = ColorCatalog::all();
         $coatingTypes = CoatingType::all();
         $drillings = Drilling::all();
-        $millings = Milling::all();
+        $millings = Milling::orderBy('name')->get();
         $thicknesses = Thickness::ordered()->get();
 
         return view('client.create', compact(

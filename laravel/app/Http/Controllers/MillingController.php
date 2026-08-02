@@ -4,30 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Milling;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Storage;
 class MillingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $millings = Milling::all();
-
+        $millings = Milling::orderBy('name')->get(); // ← сортировка по алфавиту
         return view('millings.index', compact('millings'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('millings.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -38,7 +28,13 @@ class MillingController extends Controller
             'price_dealer' => 'nullable|numeric',
             'price_private' => 'nullable|numeric',
             'price_coloring' => 'nullable|numeric',
+            'svg_file' => 'nullable|file|mimes:svg,png,jpg,jpeg|max:2048',
         ]);
+
+        // Сохраняем SVG если загружен
+        if ($request->hasFile('svg_file')) {
+            $validated['svg_path'] = $request->file('svg_file')->store('millings', 'public');
+        }
 
         Milling::create($validated);
 
@@ -46,37 +42,36 @@ class MillingController extends Controller
             ->with('success', 'Фрезеровка добавлена');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Milling $milling)
     {
         return view('millings.show', compact('milling'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Milling $milling)
     {
         return view('millings.edit', compact('milling'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Milling $milling)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            // Проверка на уникальность name_en и code, исключая текущую запись
             'name_en' => 'required|string|max:255|unique:millings,name_en,' . $milling->id,
             'code' => 'required|string|unique:millings,code,' . $milling->id,
             'price_retail' => 'nullable|numeric',
             'price_dealer' => 'nullable|numeric',
             'price_private' => 'nullable|numeric',
             'price_coloring' => 'nullable|numeric',
+            'svg_file' => 'nullable|file|mimes:svg,png,jpg,jpeg|max:2048',
         ]);
+
+        // Если загружен новый SVG — удаляем старый и сохраняем новый
+        if ($request->hasFile('svg_file')) {
+            if ($milling->svg_path) {
+                Storage::disk('public')->delete($milling->svg_path);
+            }
+            $validated['svg_path'] = $request->file('svg_file')->store('millings', 'public');
+        }
 
         $milling->update($validated);
 
@@ -84,11 +79,18 @@ class MillingController extends Controller
             ->with('success', 'Фрезеровка полностью обновлена');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $milling = Milling::findOrFail($id);
+
+        // Удаляем файл чертежа
+        if ($milling->svg_path) {
+            Storage::disk('public')->delete($milling->svg_path);
+        }
+
+        $milling->delete();
+
+        return redirect()->route('millings.index')
+            ->with('success', 'Фрезеровка удалена');
     }
 }
