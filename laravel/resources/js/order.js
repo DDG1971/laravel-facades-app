@@ -321,7 +321,6 @@ const updatePaintShop = (orderId, shopId) => {
 // ЭТО КРИТИЧНО ДЛЯ VITE:
 window.updatePaintShop = updatePaintShop;
 
-
 // Предпросмотр чертежа фрезеровки
 window.toggleMillingPreview = function() {
     const select = document.getElementById('milling_id');
@@ -364,31 +363,30 @@ window.showMillingPreview = function() {
     }
 };
 
-window.closeMillingModal = function() {
+window.closeMillingModal = function(e) {
+    if (e) e.preventDefault();
     const modal = document.getElementById('milling-modal');
     if (modal) modal.classList.add('hidden');
 };
 
-// Закрытие по клику на фон
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'milling-modal') {
-        closeMillingModal();
-    }
-});
 window.showMillingCatalog = function() {
     const modal = document.getElementById('milling-catalog-modal');
     if (modal) modal.classList.remove('hidden');
 };
 
-window.closeMillingCatalog = function() {
+window.closeMillingCatalog = function(e) {
+    if (e) e.preventDefault();
     const modal = document.getElementById('milling-catalog-modal');
     if (modal) modal.classList.add('hidden');
 };
 
-// Закрытие каталога по клику на фон
+// Закрытие по клику на фон (объединённый слушатель)
 document.addEventListener('click', function(e) {
+    if (e.target.id === 'milling-modal') {
+        closeMillingModal(e);
+    }
     if (e.target.id === 'milling-catalog-modal') {
-        closeMillingCatalog();
+        closeMillingCatalog(e);
     }
 });
 

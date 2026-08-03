@@ -148,7 +148,7 @@
                 {{-- Модальное окно --}}
                 <div id="milling-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
                     <div class="bg-white rounded-lg p-4 max-w-lg max-h-[80vh] overflow-auto relative">
-                        <button onclick="closeMillingModal()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+                        <button onclick="closeMillingModal(event)" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
                         <h3 class="text-lg font-semibold mb-3" id="milling-modal-title">Чертёж фрезеровки</h3>
                         <img id="milling-modal-image" src="" alt="Чертёж" class="max-w-full">
                         <p id="milling-modal-empty" class="text-gray-400 hidden">Для этой фрезеровки чертёж не загружен.</p>
@@ -203,7 +203,7 @@
     {{-- Каталог фрезеровок --}}
     <div id="milling-catalog-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[80vh] overflow-auto relative">
-            <button onclick="closeMillingCatalog()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
+            <button onclick="closeMillingCatalog(event)" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
             <h3 class="text-lg font-semibold mb-4">Каталог фрезеровок</h3>
 
             <div class="space-y-4">
