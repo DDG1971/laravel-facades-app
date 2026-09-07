@@ -68,7 +68,7 @@ class AdminController extends Controller
 
         // 1. Загружаем данные
         $orders = Order::with(['items.milling', 'items.facadeType', 'paintShop'])
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->whereBetween('created_at', [$startOfMonth, $startOfMonth->copy()->endOfMonth()->endOfDay()])
             ->get();
 
         // 2. Общие финансовые показатели (по заказам)
@@ -132,7 +132,7 @@ class AdminController extends Controller
 
             $dayM2 = $orders->filter(function($order) use ($day) {
                 return $order->created_at->day == $day;
-            })->sum(fn($o) => $o->total_square);
+            })->sum(fn($o) => $o->getTotalSquareAttribute());
 
             $dailyData[] = $dayM2;
         }

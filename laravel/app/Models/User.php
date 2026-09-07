@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $email
  * @property string $password
- * @property string $role        // 👈 твой кастомный атрибут
+ * @property string $role        //  кастомный атрибут
  * @property int|null $customer_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

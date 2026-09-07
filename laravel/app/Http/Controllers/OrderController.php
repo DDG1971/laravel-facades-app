@@ -296,12 +296,12 @@ class OrderController extends Controller
                 ]);
 
         // Вызываю  метод расчета, который  написан в модели
-                $backendPrice = $orderItem->calculatePrice();
+                $backendPrice = $orderItem->calculatePrice($order->price_group ?? $order->getPriceGroup());
 
            // Обновляю запись в базе реальной ценой
                 $orderItem->update([
                     'total_price' => $backendPrice,
-                    'unit_price' => $orderItem->getRate()
+                    'unit_price' => $orderItem->getRate($order->price_group ?? $order->getPriceGroup())
                 ]);
 
                 $totalSquare += $square;
@@ -720,8 +720,12 @@ class OrderController extends Controller
         $order->load(['items.drilling', 'items.facadeType', 'items.thickness']);
         if ($request->has('price_group')) {
             $newGroup = $request->input('price_group');
-            if (in_array($newGroup, ['retail', 'dealer', 'private','coloring'])) {
+            if (in_array($newGroup, ['retail', 'dealer', 'private', 'coloring'])) {
                 $order->update(['price_group' => $newGroup]);
+
+                // Пересчитываем total_price с новой группой
+                $newTotal = $order->calculateTotal($newGroup);
+                $order->update(['total_price' => $newTotal]);
             }
         }
         // Теперь $priceGroup всегда берется из базы (уже обновленный или старый)
