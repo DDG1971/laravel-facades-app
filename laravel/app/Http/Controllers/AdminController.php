@@ -79,7 +79,7 @@ class AdminController extends Controller
         // 3. Обработка позиций (цеха + фрезеровки + исключения витрин)
         $allItems = collect();
         foreach ($orders as $order) {
-            $parentMillingName = $order->milling->name ?? 'Без фрезы';
+            $parentMillingName = $order->milling->name_en ?? 'Без фрезы';
             $workshopName = $order->paintShop->name ?? 'Не распределено';
             $workshopId = $order->paint_shop_id ?? 0;
 

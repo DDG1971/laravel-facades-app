@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="head">
         <!-- 1. Подключаем ваши рабочие стили через ваш компонент -->
-        <x-assets />
+        <x-assets/>
 
         <!-- 2. Подключаем библиотеку графиков -->
-         <script src="{{ asset('js/chart.min.js') }}"></script>
+        <script src="{{ asset('js/chart.min.js') }}"></script>
     </x-slot>
 
     <x-slot name="header">
@@ -16,10 +16,12 @@
     <div class="py-12">
         <!-- 1. ФОРМА ФИЛЬТРА -->
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-6">
-            <form action="{{ route('admin.statistics') }}" method="GET" class="bg-white p-4 rounded-lg shadow flex flex-wrap items-end gap-4 border border-gray-100">
+            <form action="{{ route('admin.statistics') }}" method="GET"
+                  class="bg-white p-4 rounded-lg shadow flex flex-wrap items-end gap-4 border border-gray-100">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Месяц</label>
-                    <select name="month" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select name="month"
+                            class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         @foreach(range(1, 12) as $m)
                             <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>
                                 {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
@@ -29,14 +31,19 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Год</label>
-                    <select name="year" class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select name="year"
+                            class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         @foreach(range(now()->year, now()->year - 2) as $y)
                             <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition font-medium">Показать</button>
-                <a href="{{ route('admin.statistics') }}" class="text-gray-500 text-sm hover:underline pb-2">Сбросить</a>
+                <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition font-medium">
+                    Показать
+                </button>
+                <a href="{{ route('admin.statistics') }}"
+                   class="text-gray-500 text-sm hover:underline pb-2">Сбросить</a>
             </form>
         </div>
 
@@ -66,13 +73,17 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 <!-- Круговая диаграмма -->
                 <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                    <h3 class="text-gray-500 font-bold mb-4 text-center uppercase text-xs tracking-wider">Доля цехов (м²)</h3>
+                    <h3 class="text-gray-500 font-bold mb-4 text-center uppercase text-xs tracking-wider">Доля цехов
+                        (м²)</h3>
                     <canvas id="workshopChart" height="250"></canvas>
                 </div>
                 <!-- Линейный график -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                    <h3 class="text-gray-500 font-bold mb-4 uppercase text-xs tracking-wider text-left">График приема заказов (м²)</h3>
-                    <div style="height: 250px;"><canvas id="dailyChart"></canvas></div>
+                    <h3 class="text-gray-500 font-bold mb-4 uppercase text-xs tracking-wider text-left">График приема
+                        заказов (м²)</h3>
+                    <div style="height: 250px;">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -102,7 +113,9 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($items->groupBy('stat_name') as $name => $millingRows)
+                                @foreach($items->groupBy('stat_name')->sortByDesc(function($millingRows) {
+                                    return [$millingRows->sum('row_square'), $millingRows->sum('quantity')];
+                                 }) as $name => $millingRows)
                                     <tr class="border-b last:border-0 hover:bg-gray-50 transition">
                                         <td class="py-3 font-medium text-gray-700">
                                             {{ $name }}
@@ -143,7 +156,7 @@
                 },
                 options: {
                     cutout: '75%',
-                    plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } }
+                    plugins: {legend: {position: 'bottom', labels: {padding: 20, usePointStyle: true}}}
                 }
             });
 
@@ -168,10 +181,10 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f3f4f6' } },
-                        x: { grid: { display: false } }
+                        y: {beginAtZero: true, grid: {borderDash: [5, 5], color: '#f3f4f6'}},
+                        x: {grid: {display: false}}
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: {legend: {display: false}}
                 }
             });
         });
