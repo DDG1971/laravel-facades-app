@@ -77,8 +77,15 @@ class AdminController extends Controller
         $debt = $totalMoney - $actuallyPaid;
 
         // 3. Обработка позиций (цеха + фрезеровки + исключения витрин)
+        $completedOrders = Order::with(['items.milling', 'items.facadeType', 'paintShop', 'status'])
+            ->whereIn('status_id', function($query) {
+                $query->select('id')->from('statuses')->whereIn('name', ['ready', 'shipped', 'completed']);
+            })
+            ->whereNotNull('date_status')
+            ->whereBetween('date_status', [$startOfMonth, $startOfMonth->copy()->endOfMonth()->endOfDay()])
+            ->get();
         $allItems = collect();
-        foreach ($orders as $order) {
+        foreach ($completedOrders as $order) {
             $parentMillingName = $order->milling->name_en ?? 'Без фрезы';
             $workshopName = $order->paintShop->name ?? 'Не распределено';
             $workshopId = $order->paint_shop_id ?? 0;
@@ -115,7 +122,7 @@ class AdminController extends Controller
 
         // 4. Группировка для таблиц и общая квадратура
         $statsByWorkshop = $allItems->groupBy('workshop_id');
-        $totalM2 = $allItems->sum('row_square');
+        $totalM2 = $orders->sum(fn($order) => $order->getTotalSquareAttribute());
 
         // 5. Данные для круговой диаграммы (Доли цехов)
         $chartLabels = [];
