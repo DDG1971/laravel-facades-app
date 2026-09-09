@@ -99,7 +99,9 @@ class AdminController extends Controller
                     }
                 }
 
-                $isByDrawing = strtolower(trim($fName)) === 'by drawings';
+                $inheritFromParent = ['by drawings', 'bevel', 'contour_vienna', 'contour_bravo', 'contour_viennaGL', 'contour'];
+
+                $isByDrawing = in_array(strtolower(trim($fName)), $inheritFromParent);
 
                 if ($fName && !$isWindow && !$isByDrawing && !in_array($fName, ['—', '', ' ', '-'])) {
                     $item->stat_name = $fName;
