@@ -99,7 +99,9 @@ class AdminController extends Controller
                     }
                 }
 
-                if ($fName && !$isWindow && !in_array($fName, ['—', '', ' ', '-'])) {
+                $isByDrawing = strtolower(trim($fName)) === 'by drawings';
+
+                if ($fName && !$isWindow && !$isByDrawing && !in_array($fName, ['—', '', ' ', '-'])) {
                     $item->stat_name = $fName;
                 } else {
                     $item->stat_name = $parentMillingName;
