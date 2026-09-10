@@ -38,6 +38,7 @@ class Order extends Model
         'payment_status',
         'paid_amount',
         'price_group',
+        'date_ready',
     ];
     public function customer()
     {
@@ -94,6 +95,7 @@ class Order extends Model
         'date_status'  => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'date_ready' => 'datetime',
     ];
     public function getPriceGroup(): string
     {

@@ -78,11 +78,8 @@ class AdminController extends Controller
 
         // 3. Обработка позиций (цеха + фрезеровки + исключения витрин)
         $completedOrders = Order::with(['items.milling', 'items.facadeType', 'paintShop', 'status'])
-            ->whereIn('status_id', function($query) {
-                $query->select('id')->from('statuses')->whereIn('name', ['ready', 'shipped', 'completed']);
-            })
-            ->whereNotNull('date_status')
-            ->whereBetween('date_status', [$startOfMonth, $startOfMonth->copy()->endOfMonth()->endOfDay()])
+            ->whereNotNull('date_ready')
+            ->whereBetween('date_ready', [$startOfMonth, $startOfMonth->copy()->endOfMonth()->endOfDay()])
             ->get();
         $allItems = collect();
         foreach ($completedOrders as $order) {

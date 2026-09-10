@@ -763,17 +763,22 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order)
     {
-        // 1. Обновляем данные в базе
-        $order->update([
+        $newStatus = Status::find($request->input('status_id'));
+
+        $updateData = [
             'status_id' => $request->input('status_id'),
             'date_status' => now(),
-        ]);
+        ];
 
-        // 2. Просто кидаем задачу в очередь.
-        // Job сам внутри себя проверит статус, галочки и отправит ТГ.
+        // Записываем date_ready только один раз — когда заказ впервые стал готовым
+        if ($newStatus && $newStatus->name === 'ready' && !$order->date_ready) {
+            $updateData['date_ready'] = now();
+        }
+
+        $order->update($updateData);
+
         \App\Jobs\SendOrderUpdateNotification::dispatch($order);
 
-        // 3. Ответ для AJAX (чтобы на фронте всё обновилось)
         if ($request->ajax()) {
             $order->load('status');
             return response()->json([
