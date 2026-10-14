@@ -295,10 +295,14 @@ class OrderController extends Controller
                     'attachment_path' => $attachmentPath,
                 ]);
 
-        // Вызываю  метод расчета, который  написан в модели
+                // Перезагружаем $orderItem из БД и подгружаем все нужные связи
+                $orderItem->refresh();
+                $orderItem->load(['order', 'facadeType', 'thickness', 'drilling']);
+
+                // Теперь считаем цену — связи уже подгружены
                 $backendPrice = $orderItem->calculatePrice($order->price_group ?? $order->getPriceGroup());
 
-           // Обновляю запись в базе реальной ценой
+                // Обновляю запись в базе реальной ценой
                 $orderItem->update([
                     'total_price' => $backendPrice,
                     'unit_price' => $orderItem->getRate($order->price_group ?? $order->getPriceGroup())
