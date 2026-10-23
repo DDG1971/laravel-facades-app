@@ -15,7 +15,7 @@ RUN npm run build
 
 #RUN cp public/build/.vite/manifest.json public/build/manifest.json
 # Этап 2: PHP-FPM с Laravel
-FROM php:8.2-fpm
+FROM php:8.2.35-fpm
 
 # Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \

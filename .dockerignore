@@ -10,3 +10,4 @@ vendor
 .gitignore
 npm-debug.log
 *.log
+docker-compose.override.yml
