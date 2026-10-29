@@ -111,7 +111,10 @@ class OrderController extends Controller
     {
         $customers = Customer::all();
         $statuses = Status::all();
-        $facadeTypes = FacadeType::all();
+        $facadeTypes = FacadeType::withCount('orderItems')
+            ->orderByDesc('order_items_count')
+            ->orderBy('name_ru')
+            ->get();
 
         // 🔥 Получаем цвета с сортировкой по каталогу и коду
         $colors = ColorCode::with('colorCatalog')
@@ -151,7 +154,10 @@ class OrderController extends Controller
     public function createClient()
     {
         $customer = auth()->user()->customer; // только свой клиент
-        $facadeTypes = FacadeType::all();
+        $facadeTypes = FacadeType::withCount('orderItems')
+            ->orderByDesc('order_items_count')
+            ->orderBy('name_ru')
+            ->get();
         $colors = ColorCode::all();
         $colorCatalogs = ColorCatalog::all();
         $coatingTypes = CoatingType::all();
